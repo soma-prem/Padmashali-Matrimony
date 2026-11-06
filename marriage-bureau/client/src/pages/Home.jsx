@@ -61,7 +61,7 @@ export default function Home() {
               <div className="hero-actions">
                 <Link to="/login" className="btn btn-outline">Login</Link>
                 <Link to="/register" className="btn btn-primary">
-                  Create a free profile
+                  Register
                 </Link>
               </div>
             )}

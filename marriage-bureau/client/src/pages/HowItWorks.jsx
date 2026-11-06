@@ -5,7 +5,7 @@ const STEPS = [
   {
     no: '01',
     title: 'Create your profile',
-    text: 'Register and fill in your details, community, horoscope, career, family, preferences and photos.',
+    text: 'Register and fill in your details, community, horoscope, career, family information and photos.',
     note: 'Your contact details stay private until a connection is approved.',
   },
   {
@@ -56,7 +56,7 @@ export default function HowItWorks({ embedded = false }) {
       </div>
 
       <div className="hero-actions how-actions">
-        <Link to="/register" className="btn btn-primary btn-lg">Register Free</Link>
+        <Link to="/register" className="btn btn-primary btn-lg">Register</Link>
         <Link to="/contact" className="btn btn-outline btn-lg">Contact the admin team</Link>
       </div>
     </div>

@@ -1,5 +1,7 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { useEffect } from 'react'
 import { AuthProvider } from './context/AuthContext.jsx'
+import { api } from './api/api.js'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import Navbar from './components/Navbar.jsx'
 import Toaster from './components/Toaster.jsx'
@@ -11,6 +13,7 @@ import Browse from './pages/Browse.jsx'
 import BrowseDetail from './pages/BrowseDetail.jsx'
 import MyRequests from './pages/MyRequests.jsx'
 import MyConnections from './pages/MyConnections.jsx'
+import PaymentDetails from './pages/PaymentDetails.jsx'
 import Home from './pages/Home.jsx'
 import Register from './pages/Register.jsx'
 import Login from './pages/Login.jsx'
@@ -25,12 +28,30 @@ import AdminProfileDetailPage from './pages/admin/AdminProfileDetailPage.jsx'
 import AdminRequestsPage from './pages/admin/AdminRequestsPage.jsx'
 import AdminConnectionsPage from './pages/admin/AdminConnectionsPage.jsx'
 import AdminContactMessagesPage from './pages/admin/AdminContactMessagesPage.jsx'
+import AdminPaymentsPage from './pages/admin/AdminPaymentsPage.jsx'
+
+function VisitorTracker() {
+  useEffect(() => {
+    let visitorId = localStorage.getItem('mb_visitor_id')
+    if (!visitorId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(visitorId)) {
+      visitorId = crypto.randomUUID()
+      localStorage.setItem('mb_visitor_id', visitorId)
+    }
+
+    api('/visitors', { method: 'POST', body: { visitorId } })
+      .then(() => window.dispatchEvent(new Event('mb-visitor-recorded')))
+      .catch((error) => console.error('Could not record unique visitor:', error))
+  }, [])
+
+  return null
+}
 
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <div className="app-shell">
+          <VisitorTracker />
           <Navbar />
           <div className="app-workspace">
             <main className="app-main">
@@ -104,6 +125,14 @@ export default function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/payment"
+                element={
+                  <ProtectedRoute roles={['user']}>
+                    <PaymentDetails />
+                  </ProtectedRoute>
+                }
+              />
 
               <Route
                 path="/admin"
@@ -119,6 +148,7 @@ export default function App() {
                 <Route path="requests" element={<AdminRequestsPage />} />
                 <Route path="connections" element={<AdminConnectionsPage />} />
                 <Route path="messages" element={<AdminContactMessagesPage />} />
+                <Route path="payments" element={<AdminPaymentsPage />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />

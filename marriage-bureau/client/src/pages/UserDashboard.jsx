@@ -81,11 +81,22 @@ export default function UserDashboard() {
             <div className="profile-progress">
               <div className="profile-progress-fill" style={{ width: `${percent}%` }} />
             </div>
-            <p className="dash-status-message">{ui.message}</p>
+            <p className="dash-status-message">
+              {status === 'approved' && profile.paymentRequired
+                ? '✅ Your profile is approved. Browsing will unlock after the admin sends a payment request and verifies your payment.'
+                : ui.message}
+            </p>
             {status === 'rejected' && profile.rejectionReason && (
               <p className="dash-status-reason">Reason: {profile.rejectionReason}</p>
             )}
-            {status === 'approved' ? (
+            {status === 'approved' && profile.paymentRequired ? (
+              <div style={{ marginTop: 12 }}>
+                <Link to="/payment" className="btn btn-primary dash-action-btn">Payment details</Link>
+                <p style={{ marginTop: 8, fontSize: 13, color: 'var(--text)' }}>
+                  🔒 Your payment must be verified before browsing profiles.
+                </p>
+              </div>
+            ) : status === 'approved' ? (
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>
                 <Link to="/browse" className="btn btn-primary dash-action-btn">
                   Browse Profiles

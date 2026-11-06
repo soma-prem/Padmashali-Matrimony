@@ -10,19 +10,22 @@ const FINAL_GROUPS = [
       d.basic?.weightKg, d.basic?.maritalStatus, d.basic?.motherTongue],
   },
   { weight: 5,  get: (d) => [d.basic?.aboutMe] },
-  { weight: 9,  get: (d) => [d.community?.caste, d.community?.subCasteKulam, d.community?.gotra] },
+  { weight: 9,  get: (d) => [d.community?.religion, d.community?.caste, d.community?.gotra] },
   { weight: 9,  get: (d) => [d.educationCareer?.highestQualification, d.educationCareer?.college, d.educationCareer?.fieldOfStudy] },
   { weight: 9,  get: (d) => [d.educationCareer?.occupation, d.educationCareer?.company, d.educationCareer?.annualIncome] },
-  { weight: 9,  get: (d) => [d.family?.fatherName, d.family?.fatherOccupation, d.family?.motherName,
-    d.family?.motherOccupation, d.family?.brothers, d.family?.sisters,
-    d.family?.familyType, d.family?.familyValues, d.family?.nativePlace] },
+  { weight: 9,  get: (d) => [d.family?.fatherName, d.family?.fatherOccupation, d.family?.fatherAge,
+    d.family?.motherName, d.family?.motherOccupation, d.family?.motherAge, d.family?.brothers, d.family?.sisters,
+    d.family?.nativePlace] },
   { weight: 9,  get: (d) => [d.lifestyleLocation?.diet, d.lifestyleLocation?.smoking,
     d.lifestyleLocation?.drinking, d.lifestyleLocation?.hobbies] },
-  { weight: 9,  get: (d) => [d.lifestyleLocation?.city, d.lifestyleLocation?.state, d.lifestyleLocation?.country] },
+  { weight: 9,  get: (d) => [
+    d.lifestyleLocation?.city,
+    d.lifestyleLocation?.state,
+    d.lifestyleLocation?.country,
+    d.lifestyleLocation?.willingToRelocate,
+    ...(d.lifestyleLocation?.willingToRelocate ? [d.lifestyleLocation?.relocationLocation] : []),
+  ] },
   { weight: 9,  get: (d) => [d.contact?.mobile, d.contact?.whatsapp, d.contact?.email, d.contact?.address] },
-  { weight: 10, get: (d) => [d.preferences?.minAge, d.preferences?.maxAge, d.preferences?.minHeightCm,
-    d.preferences?.maxHeightCm, d.preferences?.education, d.preferences?.location,
-    d.preferences?.maritalStatus] },
   { weight: 12, get: (d) => Array.from({ length: Math.min(d.photoCount ?? 0, 2) }) }, // 1 photo = 6, 2+ = 12
 ]
 
@@ -39,5 +42,5 @@ export function computeCompletion(snapshot, photoCount) {
     const filled = fields.filter((v) => v !== null && v !== undefined && v !== '').length
     earned += Math.round((filled / fields.length) * group.weight)
   }
-  return Math.min(100, Math.round(earned))
+  return possible ? Math.round((earned / possible) * 100) : 0
 }

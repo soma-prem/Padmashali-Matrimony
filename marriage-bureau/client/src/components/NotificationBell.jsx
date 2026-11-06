@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 import { api } from '../api/api.js'
 
 /**
@@ -29,10 +29,15 @@ export default function NotificationBell({ onClick }) {
   }, [])
 
   return (
-    <Link to="/notifications" className="notif-bell" onClick={onClick} aria-label={`Notifications${unread ? `, ${unread} unread` : ''}`}>
+    <NavLink
+      to="/notifications"
+      className={({ isActive }) => `notif-bell${isActive ? ' active' : ''}`}
+      onClick={onClick}
+      aria-label={`Notifications${unread ? `, ${unread} unread` : ''}`}
+    >
       <span aria-hidden="true">♢</span>
       <span>Notifications</span>
       {unread > 0 && <span className="bell-badge">{unread > 99 ? '99+' : unread}</span>}
-    </Link>
+    </NavLink>
   )
 }

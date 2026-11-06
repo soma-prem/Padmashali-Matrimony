@@ -3,6 +3,7 @@ import { AppError } from '../utils/AppError.js'
 import { createNotification } from '../utils/notifications.js'
 import { loadProfileSnapshot } from '../utils/profileSnapshot.js'
 const VALID_PROFILE_STATUSES = ['pending_approval', 'approved', 'rejected', 'draft']
+const INITIAL_UNIQUE_VISITORS = 11
 
 // ------------------------------------------------------------------
 // GET /api/admin/stats
@@ -15,17 +16,21 @@ export async function getStats(req, res, next) {
       pendingProfiles,
       approvedProfiles,
       pendingRequests,
+      pendingPayments,
       totalConnections,
+      uniqueVisitors,
     ] = await Promise.all([
         supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'user'),
         supabase.from('profiles').select('user_id', { count: 'exact', head: true }),
         supabase.from('profiles').select('user_id', { count: 'exact', head: true }).eq('profile_status', 'pending_approval'),
         supabase.from('profiles').select('user_id', { count: 'exact', head: true }).eq('profile_status', 'approved'),
         supabase.from('interest_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+        supabase.from('membership_payments').select('id', { count: 'exact', head: true }).eq('status', 'submitted'),
         supabase.from('connections').select('id', { count: 'exact', head: true }),
+        supabase.from('site_visitors').select('visitor_id', { count: 'exact', head: true }),
       ])
 
-    for (const r of [usersTotal, totalProfiles, pendingProfiles, approvedProfiles, pendingRequests, totalConnections]) {
+    for (const r of [usersTotal, totalProfiles, pendingProfiles, approvedProfiles, pendingRequests, pendingPayments, totalConnections, uniqueVisitors]) {
       if (r.error) throw r.error
     }
 
@@ -37,7 +42,9 @@ export async function getStats(req, res, next) {
         pendingProfiles: pendingProfiles.count ?? 0,
         approvedProfiles: approvedProfiles.count ?? 0,
         pendingRequests: pendingRequests.count ?? 0,   // always 0 until Stage 4
+        pendingPayments: pendingPayments.count ?? 0,
         totalConnections: totalConnections.count ?? 0, // always 0 until Stage 4
+        uniqueVisitors: INITIAL_UNIQUE_VISITORS + (uniqueVisitors.count ?? 0),
       },
     })
   } catch (err) {
@@ -153,12 +160,17 @@ export async function getFullProfile(req, res, next) {
     const snapshot = await loadProfileSnapshot(userId, { createIfMissing: false })
 
     // account details for the admin view
-    const { data: user, error } = await supabase
+    const [userRes, paymentRes] = await Promise.all([
+      supabase
       .from('users')
       .select('id, name, email, role, is_active, created_at')
       .eq('id', userId)
-      .maybeSingle()
-    if (error) throw error
+      .maybeSingle(),
+      supabase.from('membership_payments').select('*').eq('user_id', userId).maybeSingle(),
+    ])
+    if (userRes.error) throw userRes.error
+    if (paymentRes.error) throw paymentRes.error
+    const user = userRes.data
     if (!user) throw new AppError('User not found.', 404)
 
     res.json({
@@ -166,6 +178,7 @@ export async function getFullProfile(req, res, next) {
       data: {
         profile: snapshot,
         account: user,
+        payment: paymentRes.data,
       },
     })
   } catch (err) {
@@ -190,17 +203,21 @@ export async function approveProfile(req, res, next) {
 
     const { error } = await supabase
       .from('profiles')
-      .update({ profile_status: 'approved', rejection_reason: null })
+      .update({ profile_status: 'approved', rejection_reason: null, payment_required: true })
       .eq('user_id', userId)
     if (error) throw error
 
     await createNotification(
       userId,
       'Profile approved',
-      'Your profile is approved. You can now browse profiles.'
+      'Your profile is approved. The admin will send a payment request. Browsing unlocks after payment verification.'
     )
 
-    res.json({ success: true, message: 'Profile approved.', data: { status: 'approved' } })
+    res.json({
+      success: true,
+      message: 'Profile approved. Send a payment request to the member.',
+      data: { status: 'approved' },
+    })
   } catch (err) {
     next(err)
   }

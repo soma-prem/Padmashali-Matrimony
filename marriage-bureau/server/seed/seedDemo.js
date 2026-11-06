@@ -85,15 +85,6 @@ const DEMO_USERS = [
       family_values: 'traditional',
       native_place: 'Warangal (demo)',
     },
-    preferences: {
-      min_age: 21,
-      max_age: 30,
-      min_height_cm: 155,
-      max_height_cm: 178,
-      education: 'Graduate',
-      location: 'Telangana / AP',
-      marital_status: 'never_married',
-    },
   },
   {
     user: { name: 'Suresh Rao (Demo)', email: DEMO_EMAILS[1] },
@@ -147,15 +138,6 @@ const DEMO_USERS = [
       family_type: 'joint',
       family_values: 'moderate',
       native_place: 'Guntur (demo)',
-    },
-    preferences: {
-      min_age: 21,
-      max_age: 32,
-      min_height_cm: 150,
-      max_height_cm: 175,
-      education: 'Any',
-      location: 'Any',
-      marital_status: 'any',
     },
   },
   {
@@ -211,15 +193,6 @@ const DEMO_USERS = [
       family_values: 'moderate',
       native_place: 'Nizamabad (demo)',
     },
-    preferences: {
-      min_age: 26,
-      max_age: 36,
-      min_height_cm: 165,
-      max_height_cm: 190,
-      education: 'Post graduate',
-      location: 'Any metro',
-      marital_status: 'never_married',
-    },
   },
   {
     user: { name: 'Swathi J (Demo)', email: DEMO_EMAILS[3] },
@@ -273,15 +246,6 @@ const DEMO_USERS = [
       family_type: 'extended',
       family_values: 'traditional',
       native_place: 'Warangal (demo)',
-    },
-    preferences: {
-      min_age: 25,
-      max_age: 34,
-      min_height_cm: 168,
-      max_height_cm: 185,
-      education: 'Graduate',
-      location: 'Telangana',
-      marital_status: 'never_married',
     },
   },
 ]
@@ -347,11 +311,6 @@ async function seedDemo() {
       .from('family_details')
       .insert({ user_id: user.id, ...demo.family })
     if (famError) console.warn(`! family for ${user.email}: ${famError.message}`)
-
-    const { error: prefError } = await supabase
-      .from('partner_preferences')
-      .insert({ user_id: user.id, ...demo.preferences })
-    if (prefError) console.warn(`! preferences for ${user.email}: ${prefError.message}`)
 
     const { error: photoError } = await supabase
       .from('profile_photos')

@@ -61,8 +61,8 @@ export default function Notifications() {
   }
 
   return (
-    <div className="dashboard-page">
-      <div className="dashboard-card" style={{ maxWidth: 720, margin: '0 auto' }}>
+    <div className="dashboard-page notifications-page">
+      <div className="dashboard-card">
         <h1 className="dashboard-title">Notifications</h1>
 
         <div className="notif-toolbar">

@@ -77,9 +77,10 @@ export async function api(path, { method = 'GET', body } = {}) {
  * - field: the multipart field name the backend expects (default "image")
  * - otherwise behaves like api(): JSON response, throws on !ok
  */
-export async function apiUpload(path, { file, field = 'image', method = 'POST' } = {}) {
+export async function apiUpload(path, { file, field = 'image', method = 'POST', fields = {} } = {}) {
   const formData = new FormData()
   formData.append(field, file)
+  Object.entries(fields).forEach(([key, value]) => formData.append(key, value))
 
   const headers = {}
   const token = getToken()
@@ -114,8 +115,10 @@ export async function apiUpload(path, { file, field = 'image', method = 'POST' }
  * toast.success('Saved!'), toast.error('Something failed.')
  */
 const TOAST_EVENT = 'mb-toast'
-export function toast(kind, text, ms = 3500) {
-  window.dispatchEvent(new CustomEvent(TOAST_EVENT, { detail: { kind, text, key: Date.now() + Math.random() } }))
+export function toast(kind, text, ms = 2000) {
+  window.dispatchEvent(new CustomEvent(TOAST_EVENT, {
+    detail: { kind, text, key: Date.now() + Math.random(), duration: ms },
+  }))
 }
 toast.success = (text, ms) => toast('success', text, ms)
 toast.error = (text, ms) => toast('error', text, ms)

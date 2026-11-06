@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { api } from '../api/api.js'
+import { formatSiblingDetails } from '../utils/family.js'
 
 function Row({ k, v }) {
   const text = v === null || v === undefined || v === '' ? '—'
@@ -81,7 +82,6 @@ export default function BrowseDetail() {
   const family = profile.family ?? {}
   const horo = profile.horoscope ?? {}
   const lifestyle = profile.lifestyleLocation ?? {}
-  const prefs = profile.preferences ?? {}
   const contact = profile.contact // only present when connected
 
   const age = basic.dateOfBirth
@@ -187,8 +187,9 @@ export default function BrowseDetail() {
             ['Marital status', basic.maritalStatus],
             ['Mother tongue', basic.motherTongue],
             ['About me', basic.aboutMe],
+            ['Religion', community.religion],
             ['Caste', community.caste],
-            ['Sub-caste / Kulam', community.subCasteKulam],
+            ['Gotra', community.gotra],
           ]} />
 
           <Group title="Horoscope" rows={[
@@ -219,11 +220,13 @@ export default function BrowseDetail() {
 
           <Group title="Family" rows={[
             ['Father', family.fatherName && `${family.fatherName}${family.fatherOccupation ? ` (${family.fatherOccupation})` : ''}`],
+            ["Father's age", family.fatherAge],
             ['Mother', family.motherName && `${family.motherName}${family.motherOccupation ? ` (${family.motherOccupation})` : ''}`],
+            ["Mother's age", family.motherAge],
             ['Brothers', family.brothers],
+            ['Brother details', formatSiblingDetails(family.brotherDetails, family.brotherNames, 'Wife')],
             ['Sisters', family.sisters],
-            ['Family type', family.familyType],
-            ['Family values', family.familyValues],
+            ['Sister details', formatSiblingDetails(family.sisterDetails, family.sisterNames, 'Husband')],
             ['Native place', family.nativePlace],
           ]} />
 
@@ -238,13 +241,6 @@ export default function BrowseDetail() {
             ['Willing to relocate', lifestyle.willingToRelocate],
           ]} />
 
-          <Group title="Partner Preferences" rows={[
-            ['Age range', prefs.minAge && `${prefs.minAge} – ${prefs.maxAge ?? '?'} yrs`],
-            ['Height range', prefs.minHeightCm && `${prefs.minHeightCm} – ${prefs.maxHeightCm ?? '?'} cm`],
-            ['Education', prefs.education],
-            ['Location', prefs.location],
-            ['Marital status', prefs.maritalStatus],
-          ]} />
         </div>
       </div>
     </div>

@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { api } from '../../api/api.js'
+import { api, apiUpload } from '../../api/api.js'
+import { formatSiblingDetails } from '../../utils/family.js'
+import ConfirmDialog from '../../components/admin/ConfirmDialog.jsx'
+import PhotoPreview from '../../components/admin/PhotoPreview.jsx'
 
 function ReviewGroup({ title, children }) {
   return (
@@ -34,6 +37,11 @@ export default function AdminProfileDetailPage() {
   const [showRejectBox, setShowRejectBox] = useState(false)
   const [reason, setReason] = useState('')
   const [busy, setBusy] = useState(false)
+  const [paymentBusy, setPaymentBusy] = useState(false)
+  const [paymentAmount, setPaymentAmount] = useState('')
+  const [paymentQr, setPaymentQr] = useState(null)
+  const [paymentInputKey, setPaymentInputKey] = useState(0)
+  const [confirmation, setConfirmation] = useState(null)
 
   const load = async () => {
     setLoading(true)
@@ -51,7 +59,7 @@ export default function AdminProfileDetailPage() {
   useEffect(() => { load() }, [userId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const doApprove = async () => {
-    if (!window.confirm('Approve this profile? The user will be notified and can browse profiles.')) return
+    setConfirmation(null)
     setBusy(true); setActionError(''); setMessage('')
     try {
       const data = await api(`/admin/profiles/${userId}/approve`, { method: 'POST' })
@@ -69,7 +77,7 @@ export default function AdminProfileDetailPage() {
       setActionError('Give a reason of at least 5 characters.')
       return
     }
-    if (!window.confirm('Reject this profile? The user will see your reason.')) return
+    setConfirmation(null)
     setBusy(true); setActionError(''); setMessage('')
     try {
       const data = await api(`/admin/profiles/${userId}/reject`, {
@@ -87,6 +95,47 @@ export default function AdminProfileDetailPage() {
     }
   }
 
+  const sendPaymentRequest = async (event) => {
+    event.preventDefault()
+    if (!paymentQr) {
+      setActionError('Choose the payment QR/scanner image.')
+      return
+    }
+
+    setPaymentBusy(true)
+    setActionError('')
+    setMessage('')
+    try {
+      const data = await apiUpload(`/admin/profiles/${userId}/payment-request`, {
+        file: paymentQr,
+        fields: { amount: paymentAmount },
+      })
+      setPaymentQr(null)
+      setPaymentInputKey((key) => key + 1)
+      setPaymentAmount('')
+      setMessage(data.message || 'Payment request sent.')
+      await load()
+    } catch (err) {
+      setActionError(err.message)
+    } finally {
+      setPaymentBusy(false)
+    }
+  }
+
+  const retryPaymentUnlock = async () => {
+    setPaymentBusy(true)
+    setActionError('')
+    try {
+      const data = await api(`/admin/payments/${payment.id}/verify`, { method: 'POST' })
+      setMessage(data.message || 'Payment verified.')
+      await load()
+    } catch (err) {
+      setActionError(err.message)
+    } finally {
+      setPaymentBusy(false)
+    }
+  }
+
   if (loading) return <div className="page-loading">Loading profile…</div>
   if (error) {
     return (
@@ -97,7 +146,7 @@ export default function AdminProfileDetailPage() {
     )
   }
 
-  const { profile, account } = payload
+  const { profile, account, payment } = payload
   const canApprove = profile.status === 'pending_approval'
   const photos = profile.photos || []
 
@@ -141,7 +190,7 @@ export default function AdminProfileDetailPage() {
         <ReviewGroup title="Photos">
           {photos.length > 0 ? (
             <div className="admin-photo-strip">
-              {photos.map((p) => <img key={p.id} src={p.url} alt="Profile photo" />)}
+              {photos.map((p) => <PhotoPreview key={p.id} src={p.url} alt="Profile photo" />)}
             </div>
           ) : <Row k="Photos" v="No photos uploaded" />}
         </ReviewGroup>
@@ -172,8 +221,8 @@ export default function AdminProfileDetailPage() {
         </ReviewGroup>
 
         <ReviewGroup title="Community">
+          <Row k="Religion" v={profile.community?.religion} />
           <Row k="Caste" v={profile.community?.caste} />
-          <Row k="Sub-caste / Kulam" v={profile.community?.subCasteKulam} />
           <Row k="Gotra" v={profile.community?.gotra} />
         </ReviewGroup>
 
@@ -188,7 +237,7 @@ export default function AdminProfileDetailPage() {
           {profile.horoscope?.kundliImageUrl && (
             <div style={{ marginTop: 8 }}>
               <span className="k">Kundli image</span>
-              <img src={profile.horoscope.kundliImageUrl} alt="Kundli"
+              <PhotoPreview src={profile.horoscope.kundliImageUrl} alt="Kundli"
                 style={{ maxWidth: '100%', maxHeight: 320, objectFit: 'contain', border: '1px solid var(--border)', borderRadius: 8, marginTop: 6 }} />
             </div>
           )}
@@ -205,11 +254,13 @@ export default function AdminProfileDetailPage() {
 
         <ReviewGroup title="Family">
           <Row k="Father" v={profile.family?.fatherName && `${profile.family.fatherName}${profile.family.fatherOccupation ? ` (${profile.family.fatherOccupation})` : ''}`} />
+          <Row k="Father's age" v={profile.family?.fatherAge} />
           <Row k="Mother" v={profile.family?.motherName && `${profile.family.motherName}${profile.family.motherOccupation ? ` (${profile.family.motherOccupation})` : ''}`} />
+          <Row k="Mother's age" v={profile.family?.motherAge} />
           <Row k="Brothers" v={profile.family?.brothers} />
+          <Row k="Brother details" v={formatSiblingDetails(profile.family?.brotherDetails, profile.family?.brotherNames, 'Wife')} />
           <Row k="Sisters" v={profile.family?.sisters} />
-          <Row k="Family type" v={profile.family?.familyType} />
-          <Row k="Family values" v={profile.family?.familyValues} />
+          <Row k="Sister details" v={formatSiblingDetails(profile.family?.sisterDetails, profile.family?.sisterNames, 'Husband')} />
           <Row k="Native place" v={profile.family?.nativePlace} />
         </ReviewGroup>
 
@@ -224,19 +275,18 @@ export default function AdminProfileDetailPage() {
           <Row k="Willing to relocate" v={profile.lifestyleLocation?.willingToRelocate} />
         </ReviewGroup>
 
-        <ReviewGroup title="Partner Preferences">
-          <Row k="Age range" v={profile.preferences?.minAge && `${profile.preferences.minAge} – ${profile.preferences.maxAge ?? '?'} yrs`} />
-          <Row k="Height range" v={profile.preferences?.minHeightCm && `${profile.preferences.minHeightCm} – ${profile.preferences.maxHeightCm ?? '?'} cm`} />
-          <Row k="Education" v={profile.preferences?.education} />
-          <Row k="Location" v={profile.preferences?.location} />
-          <Row k="Marital status" v={profile.preferences?.maritalStatus} />
-        </ReviewGroup>
       </div>
 
       {/* actions */}
       <div className="wizard-card" style={{ marginTop: 16 }}>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button type="button" className="btn btn-primary" disabled={!canApprove || busy} onClick={doApprove}>
+          <button type="button" className="btn btn-primary" disabled={!canApprove || busy}
+            onClick={() => setConfirmation({
+              title: 'Approve profile?',
+              message: 'The user will be notified that their profile is approved. Browsing will remain locked until their payment is verified.',
+              confirmLabel: 'Approve',
+              action: doApprove,
+            })}>
             {profile.status === 'approved' ? 'Already approved' : profile.status === 'draft' ? 'Not submitted yet' : 'Approve'}
           </button>
           <button type="button" className="btn btn-danger" disabled={profile.status !== 'pending_approval' || busy}
@@ -245,6 +295,46 @@ export default function AdminProfileDetailPage() {
           </button>
         </div>
 
+        {profile.status === 'approved' && profile.paymentRequired && !payment && (
+          <form className="reject-box" onSubmit={sendPaymentRequest}>
+            <h3 style={{ margin: '0 0 8px' }}>Send membership payment request</h3>
+            <p style={{ margin: '0 0 10px', fontSize: 13 }}>
+              The member cannot browse profiles until their payment is verified.
+            </p>
+            <label className="form-label" htmlFor="membership-amount">Amount (INR)</label>
+            <input id="membership-amount" className="form-input" type="number" min="1" step="0.01"
+              required value={paymentAmount} onChange={(event) => setPaymentAmount(event.target.value)} />
+            <label className="form-label" htmlFor="membership-qr">Payment QR/scanner image</label>
+            <input key={paymentInputKey} id="membership-qr" className="form-input" type="file" accept="image/jpeg,image/png,image/webp"
+              required onChange={(event) => setPaymentQr(event.target.files?.[0] ?? null)} />
+            <button type="submit" className="btn btn-primary" disabled={paymentBusy} style={{ marginTop: 12 }}>
+              {paymentBusy ? 'Sending…' : 'Send payment request'}
+            </button>
+          </form>
+        )}
+        {profile.status === 'approved' && payment?.status === 'requested' && (
+          <p className="form-success" role="status">
+            Payment request sent on {new Date(payment.request_sent_at).toLocaleString()} for ₹{Number(payment.amount).toLocaleString('en-IN')}.
+          </p>
+        )}
+        {profile.status === 'approved' && payment?.status === 'submitted' && (
+          <p className="form-success" role="status">Payment submitted by the member. Review it in Payments.</p>
+        )}
+        {profile.status === 'approved' && payment?.status === 'rejected' && (
+          <p className="form-success" role="status">Payment was returned to the member for correction. They can resubmit it in Payment details.</p>
+        )}
+        {profile.status === 'approved' && profile.paymentRequired && payment?.status === 'verified' && (
+          <div className="reject-box">
+            <p style={{ margin: '0 0 10px' }}>Payment is verified; retry unlocking browsing if the previous update failed.</p>
+            <button type="button" className="btn btn-primary" disabled={paymentBusy} onClick={retryPaymentUnlock}>
+              {paymentBusy ? 'Please wait…' : 'Unlock browsing'}
+            </button>
+          </div>
+        )}
+        {profile.status === 'approved' && !profile.paymentRequired && payment?.status === 'verified' && (
+          <p className="form-success" role="status">Payment verified. The member can browse profiles.</p>
+        )}
+
         {showRejectBox && (
           <div className="reject-box">
             <label htmlFor="reject-reason" style={{ fontWeight: 700, fontSize: 14 }}>Reason (shown to the user)</label>
@@ -252,7 +342,19 @@ export default function AdminProfileDetailPage() {
               placeholder="e.g. About me is missing — write at least 3 sentences about yourself."
               value={reason} onChange={(e) => setReason(e.target.value)} />
             <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
-              <button type="button" className="btn btn-danger btn-sm" disabled={busy} onClick={doReject}>
+              <button type="button" className="btn btn-danger btn-sm" disabled={busy} onClick={() => {
+                if (reason.trim().length < 5) {
+                  setActionError('Give a reason of at least 5 characters.')
+                  return
+                }
+                setConfirmation({
+                  title: 'Reject profile?',
+                  message: 'The user will be notified and will see the reason you provided.',
+                  confirmLabel: 'Reject profile',
+                  danger: true,
+                  action: doReject,
+                })
+              }}>
                 {busy ? 'Please wait…' : 'Confirm rejection'}
               </button>
               <button type="button" className="btn btn-outline btn-sm" disabled={busy}
@@ -263,6 +365,16 @@ export default function AdminProfileDetailPage() {
           </div>
         )}
       </div>
+      <ConfirmDialog
+        open={!!confirmation}
+        title={confirmation?.title}
+        message={confirmation?.message}
+        confirmLabel={confirmation?.confirmLabel}
+        danger={confirmation?.danger}
+        busy={busy}
+        onCancel={() => setConfirmation(null)}
+        onConfirm={() => confirmation?.action()}
+      />
     </div>
   )
 }

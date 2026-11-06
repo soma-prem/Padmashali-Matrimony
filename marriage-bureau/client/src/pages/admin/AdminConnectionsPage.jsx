@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../../api/api.js'
+import PhotoPreview from '../../components/admin/PhotoPreview.jsx'
 
 function fmtDate(v) {
   if (!v) return '—'
@@ -11,7 +12,7 @@ function Party({ party }) {
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
       {party.profilePhotoUrl ? (
-        <img className="admin-avatar" src={party.profilePhotoUrl} alt=""
+        <PhotoPreview className="admin-avatar" src={party.profilePhotoUrl} alt={`${party.name} profile photo`}
           style={{ width: 40, height: 40 }} />
       ) : (
         <div className="admin-avatar" style={{ width: 40, height: 40 }}>

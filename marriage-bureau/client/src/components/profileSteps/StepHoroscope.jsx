@@ -1,8 +1,36 @@
+import { useEffect, useState } from 'react'
 import { RASHI_OPTIONS, NAKSHATRA_OPTIONS, PADA_OPTIONS, MANGLIK_OPTIONS } from '../../utils/profileOptions.js'
 import { apiUpload } from '../../api/api.js'
 
+function getTimeParts(time) {
+  if (!time) return { hour: '', minute: '', period: '' }
+  const [hours, minutes] = time.split(':').map(Number)
+  return {
+    hour: String(hours % 12 || 12),
+    minute: String(minutes).padStart(2, '0'),
+    period: hours >= 12 ? 'PM' : 'AM',
+  }
+}
+
+function to24HourTime({ hour, minute, period }) {
+  if (!hour || !minute || !period) return ''
+  const hours = (Number(hour) % 12) + (period === 'PM' ? 12 : 0)
+  return `${String(hours).padStart(2, '0')}:${minute}`
+}
+
 export default function StepHoroscope({ value = {}, onChange, disabled, onProfileReplace }) {
   const set = (key) => (e) => onChange({ ...value, [key]: e.target.value })
+  const [timeParts, setTimeParts] = useState(() => getTimeParts(value.timeOfBirth))
+
+  useEffect(() => {
+    if (value.timeOfBirth) setTimeParts(getTimeParts(value.timeOfBirth))
+  }, [value.timeOfBirth])
+
+  const setTimePart = (part, selectedValue) => {
+    const next = { ...timeParts, [part]: selectedValue }
+    setTimeParts(next)
+    onChange({ ...value, timeOfBirth: to24HourTime(next) })
+  }
 
   const handleKundliUpload = async (e) => {
     const file = e.target.files?.[0]
@@ -18,9 +46,29 @@ export default function StepHoroscope({ value = {}, onChange, disabled, onProfil
   return (
     <div className="form-grid">
       <div className="field">
-        <label htmlFor="tob">Time of birth</label>
-        <input id="tob" type="time" className="form-input"
-          value={value.timeOfBirth ?? ''} onChange={set('timeOfBirth')} disabled={disabled} />
+        <label htmlFor="tob-hour">Time of birth (12-hour)</label>
+        <div className="height-inputs">
+          <select id="tob-hour" className="form-input" aria-label="Birth hour"
+            value={timeParts.hour} onChange={(e) => setTimePart('hour', e.target.value)} disabled={disabled}>
+            <option value="">Hour</option>
+            {Array.from({ length: 12 }, (_, index) => String(index + 1)).map((hour) => (
+              <option key={hour} value={hour}>{hour}</option>
+            ))}
+          </select>
+          <select id="tob-minute" className="form-input" aria-label="Birth minute"
+            value={timeParts.minute} onChange={(e) => setTimePart('minute', e.target.value)} disabled={disabled}>
+            <option value="">Minute</option>
+            {Array.from({ length: 60 }, (_, minute) => String(minute).padStart(2, '0')).map((minute) => (
+              <option key={minute} value={minute}>{minute}</option>
+            ))}
+          </select>
+          <select id="tob-period" className="form-input" aria-label="AM or PM"
+            value={timeParts.period} onChange={(e) => setTimePart('period', e.target.value)} disabled={disabled}>
+            <option value="">AM/PM</option>
+            <option value="AM">AM</option>
+            <option value="PM">PM</option>
+          </select>
+        </div>
       </div>
 
       <div className="field">

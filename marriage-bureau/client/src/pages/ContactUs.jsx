@@ -2,8 +2,6 @@ import { useState } from 'react'
 import { api, toast } from '../api/api.js'
 import { usePageMeta } from '../utils/usePageMeta.js'
 
-import { Link } from 'react-router-dom'
-
 export default function ContactUs({ embedded = false }) {
   usePageMeta(
     'Contact us',
@@ -80,10 +78,6 @@ export default function ContactUs({ embedded = false }) {
           {sending ? 'Sending…' : 'Send message'}
         </button>
       </form>
-
-      <p style={{ marginTop: 18, fontSize: 14 }}>
-        Already have an account? <Link to="/dashboard">Go to your dashboard</Link>.
-      </p>
     </div>
   )
 }

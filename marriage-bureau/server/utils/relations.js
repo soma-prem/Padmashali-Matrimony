@@ -78,12 +78,15 @@ export async function checkConnected(a, b) {
 export async function requireApprovedProfile(userId) {
   const { data: profile, error } = await supabase
     .from('profiles')
-    .select('user_id, profile_status, gender')
+    .select('user_id, profile_status, gender, payment_required')
     .eq('user_id', userId)
     .maybeSingle()
   if (error) throw error
   if (!profile || profile.profile_status !== 'approved') {
     throw new AppError('Your profile must be approved before you can browse.', 403)
+  }
+  if (profile.payment_required) {
+    throw new AppError('Your membership payment must be verified before you can browse.', 403)
   }
   return profile
 }
@@ -104,6 +107,9 @@ export function stripContact(snapshot) {
 export function assertBrowseTarget(otherProfile, viewerProfile) {
   if (!otherProfile) throw new AppError('Profile not found.', 404)
   if (otherProfile.profile_status !== 'approved') {
+    throw new AppError('This profile is not available.', 404)
+  }
+  if (otherProfile.payment_required) {
     throw new AppError('This profile is not available.', 404)
   }
   if (viewerProfile && otherProfile.user_id === viewerProfile.user_id) {

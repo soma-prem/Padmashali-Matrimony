@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
 import { api } from '../../api/api.js'
+import { formatSiblingDetails } from '../../utils/family.js'
+import ConfirmDialog from '../../components/admin/ConfirmDialog.jsx'
+import PhotoPreview from '../../components/admin/PhotoPreview.jsx'
 
 const TABS = [
   { value: 'pending', label: 'Pending' },
@@ -32,7 +35,6 @@ function ProfilePane({ role, profile, account }) {
   const family = p.family ?? {}
   const horo = p.horoscope ?? {}
   const lifestyle = p.lifestyleLocation ?? {}
-  const prefs = p.preferences ?? {}
   const photos = p.photos || []
 
   const age = basic.dateOfBirth
@@ -45,7 +47,7 @@ function ProfilePane({ role, profile, account }) {
 
       {photos.length > 0 ? (
         <div className="admin-photo-strip" style={{ marginBottom: 10 }}>
-          {photos.map((ph) => <img key={ph.id} src={ph.url} alt="Photo" />)}
+          {photos.map((ph) => <PhotoPreview key={ph.id} src={ph.url} alt="Photo" />)}
         </div>
       ) : <Row k="Photos" v="No photos" />}
 
@@ -80,8 +82,12 @@ function ProfilePane({ role, profile, account }) {
         ['Marital status', basic.maritalStatus],
         ['Mother tongue', basic.motherTongue],
         ['About me', basic.aboutMe],
+      ]} />
+
+      <Group title="Community" rows={[
+        ['Religion', community.religion],
         ['Caste', community.caste],
-        ['Sub-caste / Kulam', community.subCasteKulam],
+        ['Gotra', community.gotra],
       ]} />
 
       <Group title="Horoscope" rows={[
@@ -103,11 +109,13 @@ function ProfilePane({ role, profile, account }) {
 
       <Group title="Family" rows={[
         ['Father', family.fatherName && `${family.fatherName}${family.fatherOccupation ? ` (${family.fatherOccupation})` : ''}`],
+        ["Father's age", family.fatherAge],
         ['Mother', family.motherName && `${family.motherName}${family.motherOccupation ? ` (${family.motherOccupation})` : ''}`],
+        ["Mother's age", family.motherAge],
         ['Brothers', family.brothers],
+        ['Brother details', formatSiblingDetails(family.brotherDetails, family.brotherNames, 'Wife')],
         ['Sisters', family.sisters],
-        ['Family type', family.familyType],
-        ['Family values', family.familyValues],
+        ['Sister details', formatSiblingDetails(family.sisterDetails, family.sisterNames, 'Husband')],
         ['Native place', family.nativePlace],
       ]} />
 
@@ -119,12 +127,6 @@ function ProfilePane({ role, profile, account }) {
         ['Willing to relocate', lifestyle.willingToRelocate],
       ]} />
 
-      <Group title="Partner Preferences" rows={[
-        ['Age range', prefs.minAge && `${prefs.minAge} – ${prefs.maxAge ?? '?'} yrs`],
-        ['Height range', prefs.minHeightCm && `${prefs.minHeightCm} – ${prefs.maxHeightCm ?? '?'} cm`],
-        ['Education', prefs.education],
-        ['Location', prefs.location],
-      ]} />
     </div>
   )
 }
@@ -144,6 +146,7 @@ export default function AdminRequestsPage() {
   const [rejectOpen, setRejectOpen] = useState(false)
   const [reason, setReason] = useState('')
   const [busy, setBusy] = useState(false)
+  const [confirmation, setConfirmation] = useState(null)
 
   const load = async () => {
     setLoading(true)
@@ -176,7 +179,7 @@ export default function AdminRequestsPage() {
   }
 
   const doApprove = async () => {
-    if (!window.confirm('Approve this request? BOTH users become connected.')) return
+    setConfirmation(null)
     setBusy(true); setActionError(''); setMessage('')
     try {
       const data = await api(`/admin/requests/${openId}/approve`, { method: 'POST' })
@@ -190,6 +193,7 @@ export default function AdminRequestsPage() {
   }
 
   const doReject = async () => {
+    setConfirmation(null)
     setBusy(true); setActionError(''); setMessage('')
     try {
       const data = await api(`/admin/requests/${openId}/reject`, { method: 'POST', body: { reason: reason.trim() } })
@@ -275,7 +279,13 @@ export default function AdminRequestsPage() {
 
               <div className="wizard-card" style={{ marginTop: 16 }}>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-                  <button type="button" className="btn btn-primary" disabled={busy || detail.request?.status !== 'pending'} onClick={doApprove}>
+                  <button type="button" className="btn btn-primary" disabled={busy || detail.request?.status !== 'pending'}
+                    onClick={() => setConfirmation({
+                      title: 'Approve this request?',
+                      message: 'Both users will become connected and will be notified.',
+                      confirmLabel: 'Approve & connect',
+                      action: doApprove,
+                    })}>
                     {detail.request?.status === 'approved' ? 'Already approved ✓' : 'Approve & connect'}
                   </button>
                   <button type="button" className="btn btn-danger" disabled={busy || detail.request?.status !== 'pending'} onClick={() => setRejectOpen(true)}>
@@ -292,10 +302,19 @@ export default function AdminRequestsPage() {
                       Reason (optional — only the sender is notified)
                     </label>
                     <textarea id="req-reason" className="form-input" rows={2} maxLength={500}
-                      placeholder="e.g. The profiles differ in partner preferences — please re-check before resending."
+                      placeholder="Add any relevant details for the member."
                       value={reason} onChange={(e) => setReason(e.target.value)} />
                     <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
-                      <button type="button" className="btn btn-danger btn-sm" disabled={busy} onClick={doReject}>
+                      <button type="button" className="btn btn-danger btn-sm" disabled={busy}
+                        onClick={() => setConfirmation({
+                          title: 'Reject this request?',
+                          message: reason.trim()
+                            ? 'The sender will be notified that the request was rejected.'
+                            : 'Reject this request without providing a reason?',
+                          confirmLabel: 'Reject request',
+                          danger: true,
+                          action: doReject,
+                        })}>
                         {busy ? 'Please wait…' : 'Confirm rejection'}
                       </button>
                       <button type="button" className="btn btn-outline btn-sm" disabled={busy} onClick={() => setRejectOpen(false)}>
@@ -304,6 +323,16 @@ export default function AdminRequestsPage() {
                     </div>
                   </div>
                 )}
+                <ConfirmDialog
+                  open={!!confirmation}
+                  title={confirmation?.title}
+                  message={confirmation?.message}
+                  confirmLabel={confirmation?.confirmLabel}
+                  danger={confirmation?.danger}
+                  busy={busy}
+                  onCancel={() => setConfirmation(null)}
+                  onConfirm={() => confirmation?.action()}
+                />
               </div>
             </>
           )}

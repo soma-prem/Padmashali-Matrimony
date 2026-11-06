@@ -1,5 +1,41 @@
+import { useState } from 'react'
+
+function heightPartsFromCm(heightCm) {
+  if (!heightCm) return { feet: '', inches: '' }
+
+  const totalInches = Math.round(Number(heightCm) / 2.54)
+  return {
+    feet: String(Math.floor(totalInches / 12)),
+    inches: String(totalInches % 12),
+  }
+}
+
+function isValidHeight(feet, inches) {
+  const heightCm = Math.round((Number(feet) * 12 + Number(inches)) * 2.54)
+  return heightCm >= 100 && heightCm <= 250
+}
+
 export default function StepBasic({ value = {}, onChange, disabled }) {
   const set = (key) => (e) => onChange({ ...value, [key]: e.target.value })
+  const [heightUnit, setHeightUnit] = useState('cm')
+  const [height, setHeight] = useState(() => heightPartsFromCm(value.heightCm))
+
+  const changeHeightUnit = (unit) => {
+    setHeightUnit(unit)
+    if (unit === 'ft') setHeight(heightPartsFromCm(value.heightCm))
+  }
+
+  const setHeightPart = (part, selectedValue) => {
+    const next = { ...height, [part]: selectedValue }
+    if (part === 'feet' && next.inches !== '' && !isValidHeight(selectedValue, next.inches)) {
+      next.inches = ''
+    }
+    setHeight(next)
+    const heightCm = next.feet !== '' && next.inches !== '' && isValidHeight(next.feet, next.inches)
+      ? String(Math.round((Number(next.feet) * 12 + Number(next.inches)) * 2.54))
+      : ''
+    onChange({ ...value, heightCm })
+  }
 
   // DOB bounds: valid if between 18 and 100 years old
   const today = new Date()
@@ -32,10 +68,45 @@ export default function StepBasic({ value = {}, onChange, disabled }) {
       </div>
 
       <div className="field">
-        <label htmlFor="pb-height">Height (cm)</label>
-        <input id="pb-height" type="number" className="form-input" min={100} max={250}
-          placeholder="e.g. 168" value={value.heightCm ?? ''} onChange={set('heightCm')} disabled={disabled} />
-        <span className="hint">100 – 250</span>
+        <label htmlFor="pb-height-unit">Height</label>
+        <select id="pb-height-unit" className="form-input" value={heightUnit}
+          onChange={(e) => changeHeightUnit(e.target.value)} disabled={disabled}>
+          <option value="cm">Centimeters (cm)</option>
+          <option value="ft">Feet and inches</option>
+        </select>
+        {heightUnit === 'cm' ? (
+          <>
+            <input id="pb-height-cm" type="number" className="form-input" min={100} max={250}
+              placeholder="e.g. 168" value={value.heightCm ?? ''} onChange={set('heightCm')} disabled={disabled} />
+            <span className="hint">100 – 250 cm</span>
+          </>
+        ) : (
+          <>
+            <div className="height-inputs">
+              <select id="pb-height-feet" className="form-input" aria-label="Height in feet"
+                value={height.feet} onChange={(e) => setHeightPart('feet', e.target.value)} disabled={disabled}>
+                <option value="">Feet</option>
+                {[3, 4, 5, 6, 7, 8].map((feet) => (
+                  <option key={feet} value={feet}
+                    disabled={!Array.from({ length: 12 }, (_, inches) => isValidHeight(feet, inches)).some(Boolean)}>
+                    {feet} ft
+                  </option>
+                ))}
+              </select>
+              <select id="pb-height-inches" className="form-input" aria-label="Height in inches"
+                value={height.inches} onChange={(e) => setHeightPart('inches', e.target.value)} disabled={disabled}>
+                <option value="">Inches</option>
+                {Array.from({ length: 12 }, (_, inches) => (
+                  <option key={inches} value={inches}
+                    disabled={height.feet !== '' && !isValidHeight(height.feet, inches)}>
+                    {inches} in
+                  </option>
+                ))}
+              </select>
+            </div>
+            <span className="hint">Choose a height between 3 ft 4 in and 8 ft 2 in.</span>
+          </>
+        )}
       </div>
 
       <div className="field">

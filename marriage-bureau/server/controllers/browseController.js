@@ -87,6 +87,7 @@ export async function listBrowse(req, res, next) {
         .from('profiles')
         .select('id, user_id, name, gender, date_of_birth, height_cm, city, state, highest_qualification, occupation, marital_status, created_at, users!inner ( is_active )')
         .eq('profile_status', 'approved')
+        .eq('payment_required', false)
         .eq('gender', oppositeGender)
         .neq('user_id', req.user.id)
         .eq('users.is_active', true)
@@ -173,7 +174,7 @@ export async function getBrowseDetail(req, res, next) {
 
     const { data: targetProfile, error: findError } = await supabase
       .from('profiles')
-      .select('id, user_id, gender, profile_status')
+      .select('id, user_id, gender, profile_status, payment_required')
       .eq('id', profileId)
       .maybeSingle()
     if (findError) throw findError

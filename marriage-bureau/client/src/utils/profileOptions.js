@@ -17,41 +17,28 @@ export const MOTHER_TONGUE_OPTIONS = [
   'Telugu', 'Tamil', 'Kannada', 'Hindi', 'Marathi', 'English',
 ]
 
-export const CASTE_OPTIONS = [
-  'Padmashali',
-  'Devanga',
-  'Brahmin',
-  'Kshatriya',
-  'Reddy',
-  'Kamma',
-  'Kapu',
-  'Velama',
-  'Vysya',
-  'Yadav',
-  'Mudiraj',
-  'Goud',
-  'Chakali',
-  'Mangali',
-  'Other',
+export const RELIGION_OPTIONS = [
+  { value: 'hindu', label: 'Hindu' },
+  { value: 'muslim', label: 'Muslim' },
+  { value: 'christian', label: 'Christian' },
+  { value: 'sikh', label: 'Sikh' },
+  { value: 'jain', label: 'Jain' },
+  { value: 'buddhist', label: 'Buddhist' },
+  { value: 'other', label: 'Other' },
 ]
 
-// sub-caste / kulam options shown when caste is Padmashali or Devanga;
-// for any other caste a free-text box appears.
-export const SUBCASTE_PADMASHALI = [
-  'Padmashali - 3 Kulam',
-  'Padmashali - 5 Kulam',
-  'Padmashali - 7 Kulam',
-  'Padmasale',
-  'Jandra',
-  'Other',
-]
-
-export const SUBCASTE_DEVANGA = [
-  'Devanga - Motati',
-  'Devanga - Baliga',
-  'Devanga - Kodekal',
-  'Other',
-]
+export const CASTE_OPTIONS_BY_RELIGION = {
+  hindu: [
+    'Padmashali', 'Devanga', 'Brahmin', 'Kshatriya', 'Reddy', 'Kamma',
+    'Kapu', 'Velama', 'Vysya', 'Yadav', 'Mudiraj', 'Goud', 'Chakali', 'Mangali',
+  ],
+  muslim: ['Syed', 'Sheikh', 'Pathan', 'Mughal', 'Ansari', 'Qureshi'],
+  christian: ['Syrian Christian', 'Latin Christian', 'Dalit Christian', 'Anglo-Indian', 'Goan Christian'],
+  sikh: ['Jat Sikh', 'Khatri', 'Arora', 'Ramgarhia', 'Mazhabi Sikh', 'Ramdasia Sikh'],
+  jain: ['Oswal', 'Agarwal', 'Khandelwal', 'Porwal', 'Shrimal'],
+  buddhist: ['Mahar', 'Navayana Buddhist', 'Tibetan Buddhist', 'Other Buddhist community'],
+  other: [],
+}
 
 export const RASHI_OPTIONS = [
   'Mesha', 'Vrishabha', 'Mithuna', 'Karka', 'Simha', 'Kanya',

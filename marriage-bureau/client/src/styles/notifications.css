@@ -9,8 +9,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-width: 640px;
-  margin: 0 auto;
+  width: 100%;
 }
 
 .notif-item {
@@ -77,34 +76,56 @@
   background: var(--card);
 }
 
-/* bell in navbar */
+/* full-width notifications tab in the sidebar */
 .notif-bell {
   position: relative;
-  display: inline-grid;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  color: var(--cream, #fff);
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  width: 100%;
+  min-height: 44px;
+  padding: 9px 11px;
+  border-radius: 10px;
+  color: #665a52;
+  background: transparent;
   text-decoration: none;
-  font-size: 18px;
+  font-size: 12px;
+  font-weight: 700;
+  transition: color 0.16s ease, background 0.16s ease;
 }
 
-.notif-bell:hover { background: rgba(255, 255, 255, 0.14); }
+.notif-bell > span:nth-child(2) { flex: 1; }
+
+.notif-bell:hover,
+.notif-bell.active {
+  color: var(--primary);
+  background: #f5eae0;
+}
+
+.notifications-page,
+.notifications-page .dashboard-card {
+  width: 100%;
+  max-width: none;
+}
+
+.notifications-page .dashboard-card {
+  text-align: left;
+}
 
 .bell-badge {
   position: absolute;
-  top: 2px;
-  right: 0;
-  min-width: 17px;
-  height: 17px;
-  padding: 0 4px;
-  border-radius: 999px;
+  top: 50%;
+  right: 10px;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border-radius: 50%;
   background: #ff7a59;
   color: #fff;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 800;
   display: grid;
   place-items: center;
-  border: 2px solid var(--primary-deep);
+  border: 2px solid var(--card);
+  transform: translateY(-50%);
 }

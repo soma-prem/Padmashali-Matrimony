@@ -6,7 +6,6 @@ export default function Login() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const from = location.state?.from || null
   const justRegistered = location.state?.registered || false
   const presetEmail = location.state?.email || ''
 
@@ -29,11 +28,11 @@ export default function Login() {
       setError('')
       setSubmitting(true)
       const user = await login(form.email.trim(), form.password)
-      // admins land on the admin dashboard, users on their dashboard
+      // Admins land on the admin dashboard; members land on their profile.
       if (user.role === 'admin') {
         navigate('/admin', { replace: true })
       } else {
-        navigate(from || '/dashboard', { replace: true })
+        navigate('/profile', { replace: true })
       }
     } catch (err) {
       setError(err.message)

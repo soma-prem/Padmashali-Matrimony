@@ -28,16 +28,15 @@ async function updateCompletion(userId, percent) {
  * - Admin: use { createIfMissing: false } — missing profile -> 404.
  */
 export async function loadProfileSnapshot(userId, { createIfMissing = true } = {}) {
-  const [profileRes, horoRes, familyRes, prefsRes, photosRes] = await Promise.all([
+  const [profileRes, horoRes, familyRes, photosRes] = await Promise.all([
     supabase.from('profiles').select('*').eq('user_id', userId).maybeSingle(),
     supabase.from('horoscope_details').select('*').eq('user_id', userId).maybeSingle(),
     supabase.from('family_details').select('*').eq('user_id', userId).maybeSingle(),
-    supabase.from('partner_preferences').select('*').eq('user_id', userId).maybeSingle(),
     supabase.from('profile_photos').select('*').eq('user_id', userId)
       .order('is_main', { ascending: false })
       .order('created_at', { ascending: true }),
   ])
-  for (const res of [profileRes, horoRes, familyRes, prefsRes, photosRes]) {
+  for (const res of [profileRes, horoRes, familyRes, photosRes]) {
     if (res.error) throw res.error
   }
 
@@ -59,12 +58,20 @@ export async function loadProfileSnapshot(userId, { createIfMissing = true } = {
   const p = profileRow
   const horo = horoRes.data
   const fam = familyRes.data
-  const prefs = prefsRes.data
+  const brotherNames = fam?.brother_names ?? []
+  const sisterNames = fam?.sister_names ?? []
+  const brotherDetails = fam?.brother_details?.length
+    ? fam.brother_details
+    : brotherNames.map((name) => ({ name }))
+  const sisterDetails = fam?.sister_details?.length
+    ? fam.sister_details
+    : sisterNames.map((name) => ({ name }))
 
   const snapshot = {
     profileId: p.id,
     userId: p.user_id,
     status: p.profile_status,
+    paymentRequired: p.payment_required ?? false,
     completionPercent: p.completion_percent,
     rejectionReason: p.rejection_reason,
     updatedAt: p.updated_at,
@@ -79,6 +86,7 @@ export async function loadProfileSnapshot(userId, { createIfMissing = true } = {
       aboutMe: p.about_me,
     },
     community: {
+      religion: p.religion,
       caste: p.caste,
       subCasteKulam: p.sub_caste_kulam,
       gotra: p.gotra,
@@ -100,6 +108,7 @@ export async function loadProfileSnapshot(userId, { createIfMissing = true } = {
       state: p.state,
       country: p.country,
       willingToRelocate: p.willing_to_relocate,
+      relocationLocation: p.relocation_location,
     },
     contact: {
       mobile: p.contact_mobile,
@@ -123,24 +132,19 @@ export async function loadProfileSnapshot(userId, { createIfMissing = true } = {
       ? {
           fatherName: fam.father_name,
           fatherOccupation: fam.father_occupation,
+          fatherAge: fam.father_age,
           motherName: fam.mother_name,
           motherOccupation: fam.mother_occupation,
+          motherAge: fam.mother_age,
           brothers: fam.brothers,
+          brotherNames,
+          brotherDetails,
           sisters: fam.sisters,
+          sisterNames,
+          sisterDetails,
           familyType: fam.family_type,
           familyValues: fam.family_values,
           nativePlace: fam.native_place,
-        }
-      : null,
-    preferences: prefs
-      ? {
-          minAge: prefs.min_age,
-          maxAge: prefs.max_age,
-          minHeightCm: prefs.min_height_cm,
-          maxHeightCm: prefs.max_height_cm,
-          education: prefs.education,
-          location: prefs.location,
-          maritalStatus: prefs.marital_status,
         }
       : null,
     photos,

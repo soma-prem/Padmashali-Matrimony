@@ -61,10 +61,23 @@ export default function StepLifestyleLocation({ value = {}, onChange, disabled }
       <div className="field">
         <div className="check-row">
           <input id="l-reloc" type="checkbox" checked={value.willingToRelocate ?? false}
-            onChange={setBool('willingToRelocate')} disabled={disabled} />
+            onChange={(e) => onChange({
+              ...value,
+              willingToRelocate: e.target.checked,
+              ...(!e.target.checked ? { relocationLocation: '' } : {}),
+            })} disabled={disabled} />
           <label htmlFor="l-reloc">Willing to relocate</label>
         </div>
       </div>
+      {value.willingToRelocate && (
+        <div className="field field-full">
+          <label htmlFor="l-relocation-location">Preferred relocation location</label>
+          <input id="l-relocation-location" className="form-input" maxLength={120}
+            placeholder="City, state, or country"
+            value={value.relocationLocation ?? ''}
+            onChange={set('relocationLocation')} disabled={disabled} required />
+        </div>
+      )}
     </div>
   )
 }

@@ -15,6 +15,13 @@ import {
   listContactMessages,
   setContactMessageHandled,
 } from '../controllers/adminController.js'
+import upload from '../middleware/uploadMiddleware.js'
+import {
+  sendPaymentRequest,
+  listPaymentSubmissions,
+  verifyPayment,
+  rejectPayment,
+} from '../controllers/paymentController.js'
 
 const router = Router()
 
@@ -25,6 +32,10 @@ router.get('/profiles', listProfiles)
 router.get('/profiles/:id', getFullProfile)
 router.post('/profiles/:id/approve', approveProfile)
 router.post('/profiles/:id/reject', rejectProfile)
+router.post('/profiles/:id/payment-request', upload.single('image'), sendPaymentRequest)
+router.get('/payments', listPaymentSubmissions)
+router.post('/payments/:id/verify', verifyPayment)
+router.post('/payments/:id/reject', rejectPayment)
 router.patch('/users/:id/active', setUserActive)
 
 // Stage 4 — requests & connections

@@ -3,6 +3,7 @@ import upload from '../middleware/uploadMiddleware.js'
 import { authRequired, userOnly } from '../middleware/authMiddleware.js'
 import {
   getMyProfile,
+  getCommunityOptions,
   updateMyProfile,
   submitProfile,
   addPhoto,
@@ -21,6 +22,7 @@ router.use(authRequired, userOnly)
 
 // profile data + section saves
 router.get('/me', getMyProfile)
+router.get('/community-options', getCommunityOptions)
 router.put('/me', updateMyProfile)
 router.post('/submit', submitProfile)
 

@@ -19,12 +19,15 @@ async function getReceiverOrThrow(receiverProfileId, senderProfile) {
   }
   const { data: profile, error } = await supabase
     .from('profiles')
-    .select('user_id, name, gender, profile_status')
+    .select('user_id, name, gender, profile_status, payment_required')
     .eq('id', receiverProfileId)
     .maybeSingle()
   if (error) throw error
   if (!profile) throw new AppError('That profile does not exist.', 404)
   if (profile.profile_status !== 'approved') {
+    throw new AppError('That profile is not available right now.', 400)
+  }
+  if (profile.payment_required) {
     throw new AppError('That profile is not available right now.', 400)
   }
   if (profile.user_id === senderProfile.user_id) {
@@ -126,6 +129,7 @@ export async function sendRequest(req, res, next) {
 // ---------------------------------------------------------------------------
 export async function listSentRequests(req, res, next) {
   try {
+    await requireApprovedProfile(req.user.id)
     const { data: requests, error } = await supabase
       .from('interest_requests')
       .select('id, receiver_id, status, created_at')
@@ -213,6 +217,7 @@ export async function cancelRequest(req, res, next) {
 // ---------------------------------------------------------------------------
 export async function listMyConnections(req, res, next) {
   try {
+    await requireApprovedProfile(req.user.id)
     const { data: connections, error } = await supabase
       .from('connections')
       .select('id, user_a_id, user_b_id, created_at')

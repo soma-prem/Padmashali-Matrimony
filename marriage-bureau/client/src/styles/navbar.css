@@ -130,6 +130,14 @@
   background: #f5eae0;
 }
 
+.nav-link--locked {
+  color: #806f60;
+}
+
+.nav-link--locked:hover {
+  color: var(--primary);
+}
+
 .nav-link.active .sidebar-count {
   color: var(--primary);
   background: #fffefa;

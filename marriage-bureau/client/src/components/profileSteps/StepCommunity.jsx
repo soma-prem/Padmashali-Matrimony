@@ -1,56 +1,92 @@
-import { CASTE_OPTIONS, SUBCASTE_PADMASHALI, SUBCASTE_DEVANGA } from '../../utils/profileOptions.js'
+import { useEffect, useState } from 'react'
+import { api } from '../../api/api.js'
+import { CASTE_OPTIONS_BY_RELIGION, RELIGION_OPTIONS } from '../../utils/profileOptions.js'
 
 const OTHER = 'Other'
 
 export default function StepCommunity({ value = {}, onChange, disabled }) {
   const set = (key) => (e) => onChange({ ...value, [key]: e.target.value })
+  const casteOptions = CASTE_OPTIONS_BY_RELIGION[value.religion] ?? []
+  const [customCasteSelected, setCustomCasteSelected] = useState(false)
+  const customCaste = customCasteSelected || (value.caste && !casteOptions.includes(value.caste))
+  const [gotraOptions, setGotraOptions] = useState(value.gotra ? [value.gotra] : [])
+  const [customGotra, setCustomGotra] = useState(false)
+  const [optionsError, setOptionsError] = useState('')
 
-  const showPadmashaliList = ['Padmashali', 'Devanga'].includes(value.caste)
-  const subCasteOptions =
-    value.caste === 'Padmashali' ? SUBCASTE_PADMASHALI
-    : value.caste === 'Devanga' ? SUBCASTE_DEVANGA
-    : null
+  useEffect(() => {
+    let cancelled = false
+    api('/profile/community-options')
+      .then((response) => {
+        if (!cancelled) {
+          setGotraOptions([...new Set([value.gotra, ...response.data.gotras].filter(Boolean))])
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) setOptionsError(`Could not load Gotra suggestions: ${error.message}`)
+      })
+
+    return () => { cancelled = true }
+  }, [])
 
   return (
     <div className="form-grid">
       <div className="field">
-        <label htmlFor="pc-caste">Caste</label>
-        <select id="pc-caste" className="form-input" value={value.caste ?? ''}
-          onChange={set('caste')} disabled={disabled}>
-          <option value="">Select caste…</option>
-          {CASTE_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
+        <label htmlFor="pc-religion">Religion</label>
+        <select id="pc-religion" className="form-input" value={value.religion ?? ''}
+          onChange={(e) => {
+            setCustomCasteSelected(false)
+            onChange({ ...value, religion: e.target.value, caste: '' })
+          }}
+          disabled={disabled}>
+          <option value="">Select religion…</option>
+          {RELIGION_OPTIONS.map((religion) => (
+            <option key={religion.value} value={religion.value}>{religion.label}</option>
+          ))}
         </select>
-        <span className="hint">Padmashali is preselected by default for our community.</span>
       </div>
 
-      <div className="field">
-        <label htmlFor="pc-subcaste">Sub-caste / Kulam</label>
-        {subCasteOptions ? (
-          <select id="pc-subcaste" className="form-input" value={value.subCasteKulam ?? ''}
-            onChange={set('subCasteKulam')} disabled={disabled}>
-            <option value="">Select…</option>
-            {subCasteOptions.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
-        ) : (
-          <input id="pc-subcaste" className="form-input" maxLength={60}
-            value={value.subCasteKulam ?? ''} onChange={set('subCasteKulam')} disabled={disabled} />
-        )}
-      </div>
-
-      {value.caste === OTHER && (
+      {value.religion && (
         <div className="field">
-          <label htmlFor="pc-caste-other">Your community name</label>
-          <input id="pc-caste-other" className="form-input" maxLength={60}
-            value={value.casteOther ?? ''} onChange={set('casteOther')} disabled={disabled} />
-          <span className="hint">Type your exact community name here.</span>
+          <label htmlFor="pc-caste">Caste</label>
+          <select id="pc-caste" className="form-input"
+            value={customCaste ? OTHER : value.caste ?? ''}
+            onChange={(e) => {
+              const isOther = e.target.value === OTHER
+              setCustomCasteSelected(isOther)
+              onChange({ ...value, caste: isOther ? '' : e.target.value })
+            }}
+            disabled={disabled}>
+            <option value="">Select caste…</option>
+            {casteOptions.map((caste) => <option key={caste} value={caste}>{caste}</option>)}
+            <option value={OTHER}>Other — enter caste</option>
+          </select>
+          {customCaste && (
+            <input className="form-input" maxLength={60} placeholder="Enter your caste"
+              value={value.caste ?? ''} onChange={set('caste')} disabled={disabled} />
+          )}
         </div>
       )}
 
       <div className="field">
         <label htmlFor="pc-gotra">Gotra</label>
-        <input id="pc-gotra" className="form-input" maxLength={60}
-          value={value.gotra ?? ''} onChange={set('gotra')} disabled={disabled} />
+        <select id="pc-gotra" className="form-input"
+          value={customGotra ? OTHER : value.gotra ?? ''}
+          onChange={(e) => {
+            const isOther = e.target.value === OTHER
+            setCustomGotra(isOther)
+            onChange({ ...value, gotra: isOther ? '' : e.target.value })
+          }}
+          disabled={disabled}>
+          <option value="">Select Gotra (optional)…</option>
+          {gotraOptions.map((gotra) => <option key={gotra} value={gotra}>{gotra}</option>)}
+          <option value={OTHER}>Other — enter Gotra</option>
+        </select>
+        {customGotra && (
+          <input className="form-input" maxLength={60} placeholder="Enter your Gotra"
+            value={value.gotra ?? ''} onChange={set('gotra')} disabled={disabled} />
+        )}
         <span className="hint">Optional — leave blank if unknown.</span>
+        {optionsError && <span className="hint form-error">{optionsError}</span>}
       </div>
     </div>
   )

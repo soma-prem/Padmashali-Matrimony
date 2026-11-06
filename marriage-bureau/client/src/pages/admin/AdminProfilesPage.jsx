@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../../api/api.js'
+import ConfirmDialog from '../../components/admin/ConfirmDialog.jsx'
+import PhotoPreview from '../../components/admin/PhotoPreview.jsx'
 
 const STATUS_OPTIONS = [
   { value: '', label: 'All statuses' },
@@ -46,6 +48,7 @@ export default function AdminProfilesPage() {
   const [error, setError] = useState('')
   const [searchInput, setSearchInput] = useState(search)
   const [busyId, setBusyId] = useState(null)
+  const [confirmation, setConfirmation] = useState(null)
 
   // debounce search box -> URL (350ms)
   useEffect(() => {
@@ -100,11 +103,7 @@ export default function AdminProfilesPage() {
 
   const toggleActive = async (item) => {
     const target = !item.isActive
-    if (!window.confirm(
-      target
-        ? `Activate account ${item.accountEmail}?`
-        : `Deactivate account ${item.accountEmail}? They will NOT be able to log in.`
-    )) return
+    setConfirmation(null)
     setBusyId(item.userId)
     setError('')
     try {
@@ -115,6 +114,19 @@ export default function AdminProfilesPage() {
     } finally {
       setBusyId(null)
     }
+  }
+
+  const confirmToggleActive = (item) => {
+    const target = !item.isActive
+    setConfirmation({
+      title: target ? 'Activate account?' : 'Deactivate account?',
+      message: target
+        ? `Activate ${item.accountEmail}?`
+        : `Deactivate ${item.accountEmail}? They will no longer be able to log in.`,
+      confirmLabel: target ? 'Activate' : 'Deactivate',
+      danger: !target,
+      action: () => toggleActive(item),
+    })
   }
 
   return (
@@ -147,7 +159,7 @@ export default function AdminProfilesPage() {
         {items.map((item) => (
           <div className="admin-list-item" key={item.userId}>
             {item.profilePhotoUrl
-              ? <img className="admin-avatar" src={item.profilePhotoUrl} alt="" />
+              ? <PhotoPreview className="admin-avatar" src={item.profilePhotoUrl} alt={`${item.name} profile photo`} />
               : <div className="admin-avatar">{initials(item.name)}</div>}
 
             <div className="admin-item-main">
@@ -178,7 +190,7 @@ export default function AdminProfilesPage() {
                 type="button"
                 className={`btn btn-sm ${item.isActive ? 'btn-danger' : 'btn-primary'}`}
                 disabled={busyId === item.userId}
-                onClick={() => toggleActive(item)}
+                onClick={() => confirmToggleActive(item)}
               >
                 {busyId === item.userId ? 'Please wait…' : item.isActive ? 'Deactivate' : 'Activate'}
               </button>
@@ -204,6 +216,16 @@ export default function AdminProfilesPage() {
           </button>
         </div>
       )}
+      <ConfirmDialog
+        open={!!confirmation}
+        title={confirmation?.title}
+        message={confirmation?.message}
+        confirmLabel={confirmation?.confirmLabel}
+        danger={confirmation?.danger}
+        busy={busyId !== null}
+        onCancel={() => setConfirmation(null)}
+        onConfirm={() => confirmation?.action()}
+      />
     </div>
   )
 }

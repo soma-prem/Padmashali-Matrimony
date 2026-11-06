@@ -15,6 +15,7 @@ const USER_LINKS = [
   { to: '/browse', label: 'Discover matches', icon: '♡' },
   { to: '/requests', label: 'My requests', icon: '↗' },
   { to: '/connections', label: 'Connections', icon: '♧' },
+  { to: '/payment', label: 'Payment details', icon: '₹' },
 ]
 
 const ADMIN_LINKS = [
@@ -24,6 +25,7 @@ const ADMIN_LINKS = [
   { to: '/admin/requests', label: 'Requests', icon: '↗', countKey: 'pendingRequests' },
   { to: '/admin/connections', label: 'Connections', icon: '♧', countKey: 'totalConnections' },
   { to: '/admin/messages', label: 'Contact messages', icon: '✉', countKey: 'openMessages' },
+  { to: '/admin/payments', label: 'Payments', icon: '₹', countKey: 'pendingPayments' },
 ]
 
 export default function Navbar() {
@@ -33,11 +35,38 @@ export default function Navbar() {
   const [open, setOpen] = useState(false)
   const [adminCounts, setAdminCounts] = useState(null)
   const [openMessagesCount, setOpenMessagesCount] = useState(null)
+  const [canBrowse, setCanBrowse] = useState(false)
+  const [accessChecked, setAccessChecked] = useState(false)
 
   const close = () => setOpen(false)
   const isPublicHome = !user && !isAdmin && location.pathname === '/'
   const links = isAdmin ? ADMIN_LINKS : user ? USER_LINKS : PUBLIC_LINKS
   const sectionLabel = isAdmin ? 'Administration' : user ? 'Your space' : 'Explore'
+
+  useEffect(() => {
+    if (!user || isAdmin) {
+      setCanBrowse(false)
+      setAccessChecked(false)
+      return undefined
+    }
+
+    let cancelled = false
+    setAccessChecked(false)
+    api('/profile/me')
+      .then((response) => {
+        if (!cancelled) {
+          setCanBrowse(response.data.profile.status === 'approved' && !response.data.profile.paymentRequired)
+          setAccessChecked(true)
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setAccessChecked(true)
+          toast.error(`Could not check your profile access: ${error.message}`)
+        }
+      })
+    return () => { cancelled = true }
+  }, [isAdmin, user?.id, location.pathname])
 
   useEffect(() => {
     if (!isAdmin) {
@@ -99,6 +128,10 @@ export default function Navbar() {
         <nav className="sidebar-navigation" aria-label="Main navigation">
           <p className="sidebar-section-label">{sectionLabel}</p>
           {links.map(({ to, label, icon, end, countKey }) => {
+            const requiresPaymentAccess = ['/browse', '/requests', '/connections'].includes(to)
+            const locked = !isAdmin && requiresPaymentAccess && accessChecked && !canBrowse
+            const pendingAccessCheck = !isAdmin && requiresPaymentAccess && !accessChecked
+            const destination = locked || pendingAccessCheck ? '/payment' : to
             const count = countKey === 'openMessages'
               ? openMessagesCount
               : adminCounts?.[countKey]
@@ -114,13 +147,14 @@ export default function Navbar() {
             return (
               <NavLink
                 key={to}
-                to={to}
+                to={destination}
                 end={end}
-                className={({ isActive }) => `nav-link${(exactMatch ?? isActive) ? ' active' : ''}`}
+                className={({ isActive }) => `nav-link${(exactMatch ?? isActive) ? ' active' : ''}${locked ? ' nav-link--locked' : ''}`}
+                aria-label={locked ? `${label} — locked until payment is verified` : label}
                 onClick={close}
               >
                 <span className="sidebar-link-icon" aria-hidden="true">{icon}</span>
-                <span>{label}</span>
+                <span>{label}{locked ? ' 🔒' : ''}</span>
                 {countKey && count !== null && count !== undefined && (
                   <span className="sidebar-count" aria-label={`${count} records`}>
                     {count}

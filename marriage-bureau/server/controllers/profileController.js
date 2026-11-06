@@ -1,6 +1,6 @@
 import { supabase } from '../config/supabase.js'
 import { AppError } from '../utils/AppError.js'
-import { SECTION_TARGETS, validateSection, assertRangesConsistent } from '../utils/profileValidation.js'
+import { SECTION_TARGETS, validateSection } from '../utils/profileValidation.js'
 import { loadProfileSnapshot } from '../utils/profileSnapshot.js'
 import { uploadImage, deleteImage } from '../utils/cloudinaryImage.js'
 
@@ -76,6 +76,25 @@ export async function getMyProfile(req, res, next) {
   }
 }
 
+// GET /api/profile/community-options — distinct Gotra values from approved profiles.
+export async function getCommunityOptions(req, res, next) {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('gotra')
+      .eq('profile_status', 'approved')
+      .not('gotra', 'is', null)
+      .limit(1000)
+    if (error) throw error
+
+    const gotras = [...new Set(data.map((row) => row.gotra?.trim()).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b))
+    res.json({ success: true, data: { gotras } })
+  } catch (err) {
+    next(err)
+  }
+}
+
 // ------------------------------------------------------------------
 // PUT /api/profile/me — partial section saves
 // Editing allowed only while status is draft or rejected.
@@ -115,7 +134,7 @@ export async function updateMyProfile(req, res, next) {
     }
 
     // validate each provided section, then group by DB table
-    const tableUpdates = { profiles: {}, horoscope_details: {}, family_details: {}, partner_preferences: {} }
+    const tableUpdates = { profiles: {}, horoscope_details: {}, family_details: {} }
     for (const section of given) {
       const cleaned = validateSection(section, body[section])
       const target = SECTION_TARGETS[section]
@@ -126,15 +145,6 @@ export async function updateMyProfile(req, res, next) {
     await updateProfilesTable(userId, tableUpdates.profiles)
     await upsertOneToOne('horoscope_details', userId, tableUpdates.horoscope_details)
     await upsertOneToOne('family_details', userId, tableUpdates.family_details)
-    await upsertOneToOne('partner_preferences', userId, tableUpdates.partner_preferences)
-
-    // consistency check on saved preference ranges
-    const { data: prefsNow } = await supabase
-      .from('partner_preferences')
-      .select('*')
-      .eq('user_id', userId)
-      .maybeSingle()
-    assertRangesConsistent(prefsNow)
 
     const snapshot = await buildProfileSnapshot(userId)
     res.json({ success: true, message: 'Saved.', data: { profile: snapshot } })
@@ -340,8 +350,6 @@ export async function submitProfile(req, res, next) {
     if (snapshot.photos.length < MIN_PHOTOS_TO_SUBMIT) {
       throw new AppError('Upload at least 1 profile photo before submitting.', 400)
     }
-    assertRangesConsistent(snapshot.preferences)
-
     await updateProfilesTable(userId, {
       profile_status: 'pending_approval',
       rejection_reason: null,

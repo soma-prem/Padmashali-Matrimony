@@ -2,7 +2,7 @@
 -- Padmashali Samaj Matrimony — full database schema (all stages)
 -- Run this ONCE in the Supabase SQL editor.
 --
--- DESIGN NOTE: horoscope, family and partner-preferences are kept as
+-- DESIGN NOTE: horoscope and family details are kept as
 -- SEPARATE 1:1 tables instead of JSON columns, because:
 --   1) the browse/list queries in Stage 4 can SELECT only the columns
 --      they need from `profiles` without dragging big JSON blobs,
@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   profile_status     text        NOT NULL DEFAULT 'draft'
                      CHECK (profile_status IN ('draft', 'pending_approval', 'approved', 'rejected')),
   rejection_reason   text,
+  payment_required   boolean     NOT NULL DEFAULT false,
   completion_percent integer     NOT NULL DEFAULT 0 CHECK (completion_percent BETWEEN 0 AND 100),
 
   -- basic
@@ -59,6 +60,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   about_me           text,
 
   -- community
+  religion           text,
   caste              text,
   sub_caste_kulam    text,                          -- sub-caste / kulam
   gotra              text,
@@ -84,6 +86,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   state              text,
   country            text        DEFAULT 'India',
   willing_to_relocate boolean    DEFAULT false,
+  relocation_location text,
 
   -- PRIVATE contact details — only admin / approved connections may EVER
   -- read these through the API. They are deliberately in the profiles
@@ -110,11 +113,42 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 -- Keep databases created from an earlier version of this schema in sync.
 ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS mother_tongue text,
-  ADD COLUMN IF NOT EXISTS about_me text;
+  ADD COLUMN IF NOT EXISTS about_me text,
+  ADD COLUMN IF NOT EXISTS religion text,
+  ADD COLUMN IF NOT EXISTS relocation_location text,
+  ADD COLUMN IF NOT EXISTS payment_required boolean NOT NULL DEFAULT false;
 
 CREATE INDEX IF NOT EXISTS idx_profiles_user    ON public.profiles (user_id);
 CREATE INDEX IF NOT EXISTS idx_profiles_gender  ON public.profiles (gender);
 CREATE INDEX IF NOT EXISTS idx_profiles_status  ON public.profiles (profile_status);
+
+-- ------------------------------------------------------------
+-- membership_payments: one payment request and latest submission per user
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.membership_payments (
+  id                           uuid           PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id                      uuid           NOT NULL UNIQUE REFERENCES public.users (id) ON DELETE CASCADE,
+  amount                       numeric(12,2)  NOT NULL CHECK (amount > 0),
+  qr_image_url                 text           NOT NULL,
+  qr_public_id                 text,
+  status                       text           NOT NULL DEFAULT 'requested'
+                               CHECK (status IN ('requested', 'submitted', 'rejected', 'verified')),
+  request_sent_at              timestamptz    NOT NULL DEFAULT now(),
+  utr_number                   text,
+  payment_screenshot_url       text,
+  payment_screenshot_public_id text,
+  submitted_at                 timestamptz,
+  reviewed_at                  timestamptz,
+  reviewed_by                  uuid           REFERENCES public.users (id) ON DELETE SET NULL,
+  rejection_reason             text,
+  CONSTRAINT membership_payment_submission_complete
+    CHECK (status <> 'submitted' OR (
+      utr_number IS NOT NULL AND payment_screenshot_url IS NOT NULL AND submitted_at IS NOT NULL
+    ))
+);
+
+CREATE INDEX IF NOT EXISTS idx_membership_payments_status
+  ON public.membership_payments (status, submitted_at DESC);
 
 -- ------------------------------------------------------------
 -- horoscope_details: one row per profile (1:1)
@@ -142,28 +176,19 @@ CREATE TABLE IF NOT EXISTS public.family_details (
   user_id           uuid   NOT NULL UNIQUE REFERENCES public.users (id) ON DELETE CASCADE,
   father_name       text,
   father_occupation text,
+  father_age        integer CHECK (father_age IS NULL OR (father_age >= 18 AND father_age <= 120)),
   mother_name       text,
   mother_occupation text,
+  mother_age        integer CHECK (mother_age IS NULL OR (mother_age >= 18 AND mother_age <= 120)),
   brothers          integer CHECK (brothers IS NULL OR (brothers >= 0 AND brothers <= 20)),
+  brother_names     jsonb   NOT NULL DEFAULT '[]'::jsonb,
+  brother_details   jsonb   NOT NULL DEFAULT '[]'::jsonb,
   sisters           integer CHECK (sisters IS NULL OR (sisters >= 0 AND sisters <= 20)),
+  sister_names      jsonb   NOT NULL DEFAULT '[]'::jsonb,
+  sister_details    jsonb   NOT NULL DEFAULT '[]'::jsonb,
   family_type       text    CHECK (family_type IS NULL OR family_type IN ('nuclear', 'joint', 'extended')),
   family_values     text    CHECK (family_values IS NULL OR family_values IN ('traditional', 'moderate', 'liberal', 'spiritual')),
   native_place      text
-);
-
--- ------------------------------------------------------------
--- partner_preferences: one row per profile (1:1)
--- ------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS public.partner_preferences (
-  id              uuid    PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id         uuid    NOT NULL UNIQUE REFERENCES public.users (id) ON DELETE CASCADE,
-  min_age         integer CHECK (min_age IS NULL OR (min_age >= 18 AND min_age <= 100)),
-  max_age         integer CHECK (max_age IS NULL OR (max_age >= 18 AND max_age <= 100)),
-  min_height_cm   numeric(5,1) CHECK (min_height_cm IS NULL OR (min_height_cm >= 100 AND min_height_cm <= 250)),
-  max_height_cm   numeric(5,1) CHECK (max_height_cm IS NULL OR (max_height_cm >= 100 AND max_height_cm <= 250)),
-  education       text,                                      -- preferred qualification
-  location        text,                                      -- preferred city/state
-  marital_status  text    CHECK (marital_status IS NULL OR marital_status IN ('never_married', 'divorced', 'widowed', 'separated', 'any'))
 );
 
 -- ------------------------------------------------------------

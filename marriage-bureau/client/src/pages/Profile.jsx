@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { api } from '../api/api.js'
+import { api, toast } from '../api/api.js'
 import StepBasic from '../components/profileSteps/StepBasic.jsx'
 import StepCommunity from '../components/profileSteps/StepCommunity.jsx'
 import StepHoroscope from '../components/profileSteps/StepHoroscope.jsx'
@@ -7,10 +7,11 @@ import StepEducationCareer from '../components/profileSteps/StepEducationCareer.
 import StepFamily from '../components/profileSteps/StepFamily.jsx'
 import StepLifestyleLocation from '../components/profileSteps/StepLifestyleLocation.jsx'
 import StepPhotos from '../components/profileSteps/StepPhotos.jsx'
-import StepPreferences from '../components/profileSteps/StepPreferences.jsx'
 import StepContact from '../components/profileSteps/StepContact.jsx'
 import StepReview from '../components/profileSteps/StepReview.jsx'
 import { SUBMIT_MIN_PERCENT } from '../utils/profileOptions.js'
+import { calculateProfileCompletion } from '../utils/profileCompletion.js'
+import { useAuth } from '../context/AuthContext.jsx'
 
 const STEPS = [
   { key: 'basic', title: 'Basic', Component: StepBasic, saveable: true },
@@ -20,10 +21,10 @@ const STEPS = [
   { key: 'family', title: 'Family', Component: StepFamily, saveable: true },
   { key: 'lifestyleLocation', title: 'Lifestyle & Location', Component: StepLifestyleLocation, saveable: true },
   { key: 'photos', title: 'Photos', Component: StepPhotos, saveable: false },
-  { key: 'preferences', title: 'Partner Preferences', Component: StepPreferences, saveable: true },
   { key: 'contact', title: 'Contact Details', Component: StepContact, saveable: true },
   { key: 'review', title: 'Review & Submit', Component: StepReview, saveable: false },
 ]
+const REVIEW_SECTION_KEYS = STEPS.filter((step) => step.key !== 'review').map((step) => step.key)
 
 const STATUS_MESSAGES = {
   draft: 'Complete your profile — fill every step and submit for approval.',
@@ -33,16 +34,17 @@ const STATUS_MESSAGES = {
 }
 
 export default function Profile() {
+  const { user } = useAuth()
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
   const [step, setStep] = useState(0)
   const [saving, setSaving] = useState(false)
-  const [saveError, setSaveError] = useState('')
-  const [saveSuccess, setSaveSuccess] = useState('')
+  const [confirmedSections, setConfirmedSections] = useState({})
+  const [editingSection, setEditingSection] = useState(null)
 
-  // local draft per section so users don't lose edits between Save presses
   const [drafts, setDrafts] = useState({})
+  const draftOwner = useRef(null)
 
   const loadProfile = async () => {
     setLoading(true)
@@ -52,6 +54,7 @@ export default function Profile() {
       setProfile(data.data.profile)
     } catch (err) {
       setLoadError(err.message)
+      toast.error(err.message)
     } finally {
       setLoading(false)
     }
@@ -61,23 +64,42 @@ export default function Profile() {
     loadProfile()
   }, [])
 
-  // seed drafts from server data whenever a fresh profile arrives
+  // Restore unsaved profile form data for this account after a reload or logout.
   useEffect(() => {
     if (!profile) return
-    setDrafts((prev) => {
+    const owner = profile.userId
+    if (!owner || draftOwner.current === owner) return
+
+    let restored = {}
+    try {
+      const saved = localStorage.getItem(`mb_profile_draft_${owner}`)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) restored = parsed
+      }
+    } catch {
+      toast.error('Unable to restore your saved form data from this browser.')
+    }
+
+    setDrafts(() => {
       const next = {}
       for (const s of STEPS) {
         if (!s.saveable) continue
-        const fresh = profile[s.key]
-        if (prev[s.key] === undefined) {
-          next[s.key] = { ...(fresh || {}) }
-        } else {
-          next[s.key] = { ...prev[s.key] }
+        const savedSection = restored[s.key]
+        next[s.key] = {
+          ...(profile[s.key] || {}),
+          ...(savedSection && typeof savedSection === 'object' && !Array.isArray(savedSection)
+            ? savedSection
+            : {}),
         }
+      }
+      if (!next.contact?.email && user?.email) {
+        next.contact = { ...next.contact, email: user.email }
       }
       return next
     })
-  }, [profile])
+    draftOwner.current = owner
+  }, [profile, user?.email])
 
   const readOnly = profile && ['pending_approval', 'approved'].includes(profile.status)
 
@@ -103,33 +125,82 @@ export default function Profile() {
 
   const persistSection = async (section, value, { successMessage = 'Saved!', advance = true } = {}) => {
     setSaving(true)
-    setSaveError('')
-    setSaveSuccess('')
     try {
       const data = await api('/profile/me', { method: 'PUT', body: { [section]: value } })
       setProfile(data.data.profile)
-      setSaveSuccess(successMessage)
-      if (advance) setStep((s) => Math.min(s + 1, STEPS.length - 1))
+      toast.success(successMessage)
+      if (advance && editingSection === section) {
+        setEditingSection(null)
+        goTo(STEPS.length - 1)
+      } else if (advance) {
+        setStep((s) => Math.min(s + 1, STEPS.length - 1))
+      }
     } catch (err) {
-      setSaveError(err.message)
+      toast.error(err.message)
     } finally {
       setSaving(false)
     }
   }
 
   const current = STEPS[step]
-  const percent = profile?.completionPercent ?? 0
+  const percent = calculateProfileCompletion(profile, drafts)
 
   const goTo = (next) => {
-    setSaveError('')
-    setSaveSuccess('')
     setStep(Math.max(0, Math.min(next, STEPS.length - 1)))
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  const handleSubmit = () => persistSection('submit', {}, {
-    successMessage: 'Profile submitted for approval!',
-    advance: false,
-  }).catch(() => {})
+  const handleSubmit = async () => {
+    setSaving(true)
+    try {
+      await api('/profile/submit', { method: 'POST', body: {} })
+      toast.success('Profile submitted for approval!')
+      await loadProfile()
+    } catch (err) {
+      toast.error(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const editSection = (section) => {
+    const sectionIndex = STEPS.findIndex((item) => item.key === section)
+    if (sectionIndex < 0 || sectionIndex >= STEPS.length - 1) return
+    setConfirmedSections((confirmed) => ({ ...confirmed, [section]: false }))
+    setEditingSection(section)
+    goTo(sectionIndex)
+  }
+  const updateDraft = (section, value) => {
+    const nextDrafts = { ...drafts, [section]: value }
+    setDrafts(nextDrafts)
+    if (!profile?.userId) return
+    try {
+      localStorage.setItem(`mb_profile_draft_${profile.userId}`, JSON.stringify(nextDrafts))
+    } catch {
+      toast.error('Unable to save your form progress in this browser.')
+    }
+  }
+  const continueFromStep = () => {
+    if (editingSection === current.key && current.key === 'photos') {
+      setEditingSection(null)
+      goTo(STEPS.length - 1)
+    } else if (current.saveable && !readOnly) {
+      persistSection(current.key, drafts[current.key] || {})
+    } else {
+      goTo(step + 1)
+    }
+  }
+  const allSectionsConfirmed = REVIEW_SECTION_KEYS.every((section) => confirmedSections[section])
+  const reviewProfile = {
+    ...profile,
+    ...drafts,
+    photos: profile.photos || [],
+    contact: {
+      ...profile.contact,
+      ...drafts.contact,
+      email: drafts.contact?.email || profile.contact?.email || user?.email || '',
+    },
+  }
 
   return (
     <div className="profile-page">
@@ -173,23 +244,13 @@ export default function Profile() {
           You can browse other profiles once Stage&nbsp;4 goes live.
         </div>
       )}
-      {!readOnly && saveSuccess && (
-        <div className="profile-banner profile-banner--success" role="status">✔ {saveSuccess}</div>
-      )}
-      {!readOnly && saveError && (
-        <div className="profile-banner profile-banner--error" role="alert">{saveError}</div>
-      )}
-
       {/* step content */}
       <div className="wizard-card">
         <h2 className="wizard-title">{current.title}</h2>
-        {step === STEPS.length - 3 && (
+        {current.key === 'photos' && (
           <p className="wizard-sub">First photo you add becomes your profile photo.</p>
         )}
-        {step === STEPS.length - 2 && (
-          <p className="wizard-sub">These preferences help us show you better matches later.</p>
-        )}
-        {step === STEPS.length - 1 && (
+        {current.key === 'review' && (
           <p className="wizard-sub">Check every section, then submit.</p>
         )}
 
@@ -197,18 +258,26 @@ export default function Profile() {
           <StepPhotos profile={profile} onProfileReplace={replaceProfile} disabled={!!readOnly} />
         ) : current.key === 'review' ? (
           <StepReview
-            profile={profile}
+            profile={reviewProfile}
+            completionPercent={percent}
             disabled={!!readOnly}
             submitting={saving}
-            submitError={saveError}
             onSubmit={handleSubmit}
+            onEditSection={editSection}
+            confirmedSections={confirmedSections}
+            onToggleSection={(section, checked) => setConfirmedSections((current) => ({
+              ...current,
+              [section]: checked,
+            }))}
+            allSectionsConfirmed={allSectionsConfirmed}
           />
         ) : (
           <current.Component
             value={drafts[current.key] || {}}
-            onChange={(v) => setDrafts((d) => ({ ...d, [current.key]: v }))}
+            onChange={(v) => updateDraft(current.key, v)}
             disabled={readOnly}
             onProfileReplace={replaceProfile}
+            gender={profile?.basic?.gender}
           />
         )}
 
@@ -227,13 +296,13 @@ export default function Profile() {
                 type="button"
                 className="btn btn-primary"
                 disabled={saving}
-                onClick={() =>
-                  current.saveable && !readOnly
-                    ? persistSection(current.key, drafts[current.key] || {})
-                    : goTo(step + 1) // Continue " " label
-                }
+                onClick={continueFromStep}
               >
-                {saving ? 'Saving…' : current.saveable && !readOnly ? 'Save & Continue' : 'Continue'}
+                {saving
+                  ? 'Saving…'
+                  : editingSection === current.key
+                    ? current.saveable ? 'Save & Return to Review' : 'Return to Review'
+                    : current.saveable && !readOnly ? 'Save & Continue' : 'Continue'}
               </button>
             )}
           </div>

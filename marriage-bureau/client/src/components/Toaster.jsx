@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { onToast } from '../api/api.js'
 
 /**
@@ -7,25 +7,39 @@ import { onToast } from '../api/api.js'
  */
 export default function Toaster() {
   const [toasts, setToasts] = useState([])
+  const timers = useRef(new Map())
 
   useEffect(() => {
-    const off = onToast(({ kind, text, key }) => {
+    const off = onToast(({ kind, text, key, duration = 2000 }) => {
       setToasts((list) => [...list, { kind, text, key }])
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         setToasts((list) => list.filter((t) => t.key !== key))
-      }, 3600)
+        timers.current.delete(key)
+      }, duration)
+      timers.current.set(key, timer)
     })
-    return off
+    return () => {
+      off()
+      timers.current.forEach((timer) => clearTimeout(timer))
+      timers.current.clear()
+    }
   }, [])
+
+  const dismiss = (key) => {
+    clearTimeout(timers.current.get(key))
+    timers.current.delete(key)
+    setToasts((list) => list.filter((toast) => toast.key !== key))
+  }
 
   if (toasts.length === 0) return null
 
   return (
-    <div className="toaster" role="status" aria-live="polite">
+    <div className="toaster" aria-live="polite">
       {toasts.map((t) => (
-        <div key={t.key} className={`toast toast--${t.kind}`}>
-          {t.kind === 'success' ? '✔ ' : '✖ '}
-          {t.text}
+        <div key={t.key} className={`toast toast--${t.kind}`} role={t.kind === 'error' ? 'alert' : 'status'}>
+          <span>{t.kind === 'success' ? '✔ ' : '✖ '}{t.text}</span>
+          <button type="button" className="toast-close" aria-label="Dismiss notification"
+            onClick={() => dismiss(t.key)}>×</button>
         </div>
       ))}
     </div>

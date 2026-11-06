@@ -9,6 +9,7 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     let cancelled = false
     const load = async () => {
+      setError('')
       try {
         const data = await api('/admin/stats')
         if (!cancelled) setStats(data.data)
@@ -18,8 +19,13 @@ export default function AdminDashboardPage() {
         if (!cancelled) setLoading(false)
       }
     }
+    const reloadAfterVisit = () => load()
+    window.addEventListener('mb-visitor-recorded', reloadAfterVisit)
     load()
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+      window.removeEventListener('mb-visitor-recorded', reloadAfterVisit)
+    }
   }, [])
 
   return (
@@ -34,6 +40,10 @@ export default function AdminDashboardPage() {
           <div className="stat-card">
             <div className="num">{stats.totalUsers}</div>
             <div className="lbl">Total users</div>
+          </div>
+          <div className="stat-card">
+            <div className="num">{stats.uniqueVisitors}</div>
+            <div className="lbl">Unique visitors</div>
           </div>
           <div className="stat-card">
             <div className="num">{stats.pendingProfiles}</div>

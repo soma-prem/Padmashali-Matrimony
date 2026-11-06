@@ -11,6 +11,8 @@ import browseRoutes from './routes/browseRoutes.js'
 import requestRoutes from './routes/requestRoutes.js'
 import connectionRoutes from './routes/connectionRoutes.js'
 import contactRoutes from './routes/contactRoutes.js'
+import visitorRoutes from './routes/visitorRoutes.js'
+import paymentRoutes from './routes/paymentRoutes.js'
 import { errorHandler, notFound } from './middleware/errorHandler.js'
 
 const app = express()
@@ -67,6 +69,8 @@ app.use('/api/browse', browseRoutes)
 app.use('/api/requests', requestRoutes)
 app.use('/api/connections', connectionRoutes)
 app.use('/api/contact', contactRoutes)
+app.use('/api/visitors', visitorRoutes)
+app.use('/api/payment', paymentRoutes)
 
 // --- 404 + central error handler ---
 app.use(notFound)
