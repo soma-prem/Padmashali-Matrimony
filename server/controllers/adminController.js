@@ -75,7 +75,7 @@ export async function listProfiles(req, res, next) {
     const buildListQuery = () => {
       let query = supabase
         .from('profiles')
-        .select('id, user_id, name, gender, date_of_birth, city, state, profile_status, completion_percent, updated_at, users ( name, email, is_active, created_at )')
+        .select('id, user_id, name, gender, date_of_birth, city, state, profile_status, payment_required, completion_percent, updated_at, users ( name, email, is_active, created_at )')
       if (filters.status) query = query.eq('profile_status', filters.status)
       if (filters.gender) query = query.eq('gender', filters.gender)
       if (searchSafe) {
@@ -97,22 +97,32 @@ export async function listProfiles(req, res, next) {
       .select('id', { count: 'exact', head: true })
     if (countError) throw countError
 
-    // main photo per item (one extra query for the whole page)
+    // main photo and payment per item (one extra query for the whole page)
     const userIds = rows.map((r) => r.user_id)
     let photosByUser = {}
+    let paymentsByUser = {}
     if (userIds.length > 0) {
-      const { data: photoRows, error: photoError } = await supabase
-        .from('profile_photos')
-        .select('user_id, url, is_main')
-        .in('user_id', userIds)
-        .eq('is_main', true)
-      if (photoError) throw photoError
-      photosByUser = Object.fromEntries(photoRows.map((p) => [p.user_id, p.url]))
+      const [photoRes, paymentRes] = await Promise.all([
+        supabase
+          .from('profile_photos')
+          .select('user_id, url, is_main')
+          .in('user_id', userIds)
+          .eq('is_main', true),
+        supabase
+          .from('membership_payments')
+          .select('user_id, status, amount, utr_number, submitted_at, reviewed_at')
+          .in('user_id', userIds),
+      ])
+      if (photoRes.error) throw photoRes.error
+      if (paymentRes.error) throw paymentRes.error
+      photosByUser = Object.fromEntries((photoRes.data || []).map((p) => [p.user_id, p.url]))
+      paymentsByUser = Object.fromEntries((paymentRes.data || []).map((p) => [p.user_id, p]))
     }
 
     const items = rows.map((r) => {
       const dob = r.date_of_birth ? new Date(r.date_of_birth) : null
       const age = dob ? Math.floor((Date.now() - dob.getTime()) / (365.25 * 24 * 3600 * 1000)) : null
+      const paymentInfo = paymentsByUser[r.user_id] || null
       return {
         userId: r.user_id,
         name: r.name || r.users?.name,
@@ -125,6 +135,9 @@ export async function listProfiles(req, res, next) {
         city: r.city,
         state: r.state,
         status: r.profile_status,
+        paymentRequired: r.payment_required ?? false,
+        paymentStatus: paymentInfo?.status ?? null,
+        paymentAmount: paymentInfo?.amount ?? null,
         completionPercent: r.completion_percent,
         submittedAt: r.updated_at,
         profilePhotoUrl: photosByUser[r.user_id] ?? null,

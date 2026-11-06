@@ -7,6 +7,7 @@ export default function Login() {
   const navigate = useNavigate()
   const location = useLocation()
   const justRegistered = location.state?.registered || false
+  const passwordReset = location.state?.passwordReset || false
   const presetEmail = location.state?.email || ''
 
   const [form, setForm] = useState({ email: presetEmail, password: '' })
@@ -53,6 +54,12 @@ export default function Login() {
           </p>
         )}
 
+        {passwordReset && (
+          <p className="form-success" role="status">
+            Password reset successful! Please log in with your new password.
+          </p>
+        )}
+
         {error && <p className="form-error" role="alert">{error}</p>}
 
         <label className="form-label" htmlFor="login-email">
@@ -82,6 +89,10 @@ export default function Login() {
           autoComplete="current-password"
           required
         />
+
+        <p className="forgot-link">
+          <Link to="/forgot-password">Forgot password?</Link>
+        </p>
 
         <button type="submit" className="btn btn-primary btn-block" disabled={submitting}>
           {submitting ? 'Signing in…' : 'Login'}

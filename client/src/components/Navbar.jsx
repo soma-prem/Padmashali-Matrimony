@@ -12,10 +12,10 @@ const PUBLIC_LINKS = [
 
 const USER_LINKS = [
   { to: '/profile', label: 'My profile', icon: '♙' },
-  { to: '/browse', label: 'Discover matches', icon: '♡' },
-  { to: '/requests', label: 'My requests', icon: '↗' },
-  { to: '/connections', label: 'Connections', icon: '♧' },
-  { to: '/payment', label: 'Payment details', icon: '₹' },
+  { to: '/browse', label: 'Discover matches', icon: '♡', requiresApproval: true },
+  { to: '/requests', label: 'My requests', icon: '↗', requiresApproval: true },
+  { to: '/connections', label: 'Connections', icon: '♧', requiresApproval: true },
+  { to: '/payment', label: 'Payment details', icon: '₹', requiresApproval: true },
 ]
 
 const ADMIN_LINKS = [
@@ -35,7 +35,7 @@ export default function Navbar() {
   const [open, setOpen] = useState(false)
   const [adminCounts, setAdminCounts] = useState(null)
   const [openMessagesCount, setOpenMessagesCount] = useState(null)
-  const [canBrowse, setCanBrowse] = useState(false)
+  const [profileApproved, setProfileApproved] = useState(false)
   const [accessChecked, setAccessChecked] = useState(false)
 
   const close = () => setOpen(false)
@@ -45,7 +45,7 @@ export default function Navbar() {
 
   useEffect(() => {
     if (!user || isAdmin) {
-      setCanBrowse(false)
+      setProfileApproved(false)
       setAccessChecked(false)
       return undefined
     }
@@ -55,7 +55,8 @@ export default function Navbar() {
     api('/profile/me')
       .then((response) => {
         if (!cancelled) {
-          setCanBrowse(response.data.profile.status === 'approved' && !response.data.profile.paymentRequired)
+          const profile = response.data.profile
+          setProfileApproved(profile.status === 'approved')
           setAccessChecked(true)
         }
       })
@@ -127,11 +128,9 @@ export default function Navbar() {
 
         <nav className="sidebar-navigation" aria-label="Main navigation">
           <p className="sidebar-section-label">{sectionLabel}</p>
-          {links.map(({ to, label, icon, end, countKey }) => {
-            const requiresPaymentAccess = ['/browse', '/requests', '/connections'].includes(to)
-            const locked = !isAdmin && requiresPaymentAccess && accessChecked && !canBrowse
-            const pendingAccessCheck = !isAdmin && requiresPaymentAccess && !accessChecked
-            const destination = locked || pendingAccessCheck ? '/payment' : to
+          {links.map(({ to, label, icon, end, countKey, requiresApproval }) => {
+            const disabled = !isAdmin && requiresApproval && accessChecked && !profileApproved
+            const pendingCheck = !isAdmin && requiresApproval && !accessChecked
             const count = countKey === 'openMessages'
               ? openMessagesCount
               : adminCounts?.[countKey]
@@ -144,17 +143,32 @@ export default function Navbar() {
                 ? isAdminProfiles && new URLSearchParams(location.search).get('status') !== 'pending_approval'
                 : undefined
 
+            if (disabled || pendingCheck) {
+              return (
+                <span
+                  key={to}
+                  className="nav-link nav-link--disabled"
+                  title="Get your profile verified by admin"
+                  aria-label={`${label} — get your profile verified by admin`}
+                >
+                  <span className="sidebar-link-icon" aria-hidden="true">{icon}</span>
+                  <span>{label}</span>
+                  <span className="nav-link-tooltip">Get your profile verified by admin</span>
+                </span>
+              )
+            }
+
             return (
               <NavLink
                 key={to}
-                to={destination}
+                to={to}
                 end={end}
-                className={({ isActive }) => `nav-link${(exactMatch ?? isActive) ? ' active' : ''}${locked ? ' nav-link--locked' : ''}`}
-                aria-label={locked ? `${label} — locked until payment is verified` : label}
+                className={({ isActive }) => `nav-link${(exactMatch ?? isActive) ? ' active' : ''}`}
+                aria-label={label}
                 onClick={close}
               >
                 <span className="sidebar-link-icon" aria-hidden="true">{icon}</span>
-                <span>{label}{locked ? ' 🔒' : ''}</span>
+                <span>{label}</span>
                 {countKey && count !== null && count !== undefined && (
                   <span className="sidebar-count" aria-label={`${count} records`}>
                     {count}

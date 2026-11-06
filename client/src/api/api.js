@@ -20,7 +20,7 @@ export function setToken(token) {
  * requests themselves (401 there just means "wrong credentials").
  */
 function handle401(path) {
-  const isAuthCall = path.startsWith('/auth/login') || path.startsWith('/auth/register')
+  const isAuthCall = path.startsWith('/auth/login') || path.startsWith('/auth/register') || path.startsWith('/auth/send-otp') || path.startsWith('/auth/verify-otp') || path.startsWith('/auth/forgot-password') || path.startsWith('/auth/verify-forgot-otp') || path.startsWith('/auth/reset-password')
   if (!isAuthCall) {
     setToken(null)
     if (window.location.pathname !== '/login') {

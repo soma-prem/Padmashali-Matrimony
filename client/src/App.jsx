@@ -17,6 +17,7 @@ import PaymentDetails from './pages/PaymentDetails.jsx'
 import Home from './pages/Home.jsx'
 import Register from './pages/Register.jsx'
 import Login from './pages/Login.jsx'
+import ForgotPassword from './pages/ForgotPassword.jsx'
 import HowItWorks from './pages/HowItWorks.jsx'
 import ContactUs from './pages/ContactUs.jsx'
 import TermsPrivacy from './pages/TermsPrivacy.jsx'
@@ -59,6 +60,7 @@ export default function App() {
               <Route path="/" element={<Home />} />
               <Route path="/register" element={<Register />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/how-it-works" element={<HowItWorks />} />
               <Route path="/contact" element={<ContactUs />} />
               <Route path="/terms" element={<TermsPrivacy />} />

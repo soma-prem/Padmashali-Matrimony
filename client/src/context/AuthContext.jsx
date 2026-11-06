@@ -34,13 +34,41 @@ export function AuthProvider({ children }) {
     return data.data.user
   }
 
-  async function register(name, email, password) {
-    return api('/auth/register', { method: 'POST', body: { name, email, password } })
+  /** Step 1: send OTP to the given email */
+  async function sendOtp(email) {
+    return api('/auth/send-otp', { method: 'POST', body: { email } })
+  }
+
+  /** Step 2: verify the OTP — returns { emailVerifiedToken } */
+  async function verifyOtp(email, otp) {
+    const data = await api('/auth/verify-otp', { method: 'POST', body: { email, otp } })
+    return data.data // { emailVerifiedToken }
+  }
+
+  /** Step 3: register with the verified token */
+  async function register(name, password, emailVerifiedToken) {
+    return api('/auth/register', { method: 'POST', body: { name, password, emailVerifiedToken } })
   }
 
   function logout() {
     setToken(null)
     setUser(null)
+  }
+
+  /** Forgot password step 1: send OTP to existing user's email */
+  async function forgotPassword(email) {
+    return api('/auth/forgot-password', { method: 'POST', body: { email } })
+  }
+
+  /** Forgot password step 2: verify OTP — returns { resetToken } */
+  async function verifyForgotOtp(email, otp) {
+    const data = await api('/auth/verify-forgot-otp', { method: 'POST', body: { email, otp } })
+    return data.data // { resetToken }
+  }
+
+  /** Forgot password step 3: set new password */
+  async function resetPassword(resetToken, password) {
+    return api('/auth/reset-password', { method: 'POST', body: { resetToken, password } })
   }
 
   const value = {
@@ -49,7 +77,12 @@ export function AuthProvider({ children }) {
     role: user?.role ?? null,
     isAdmin: user?.role === 'admin',
     login,
+    sendOtp,
+    verifyOtp,
     register,
+    forgotPassword,
+    verifyForgotOtp,
+    resetPassword,
     logout,
   }
 

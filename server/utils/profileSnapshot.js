@@ -28,13 +28,14 @@ async function updateCompletion(userId, percent) {
  * - Admin: use { createIfMissing: false } — missing profile -> 404.
  */
 export async function loadProfileSnapshot(userId, { createIfMissing = true } = {}) {
-  const [profileRes, horoRes, familyRes, photosRes] = await Promise.all([
+  const [profileRes, horoRes, familyRes, photosRes, paymentRes] = await Promise.all([
     supabase.from('profiles').select('*').eq('user_id', userId).maybeSingle(),
     supabase.from('horoscope_details').select('*').eq('user_id', userId).maybeSingle(),
     supabase.from('family_details').select('*').eq('user_id', userId).maybeSingle(),
     supabase.from('profile_photos').select('*').eq('user_id', userId)
       .order('is_main', { ascending: false })
       .order('created_at', { ascending: true }),
+    supabase.from('membership_payments').select('id, status, amount, utr_number, submitted_at, reviewed_at').eq('user_id', userId).maybeSingle(),
   ])
   for (const res of [profileRes, horoRes, familyRes, photosRes]) {
     if (res.error) throw res.error
@@ -72,6 +73,14 @@ export async function loadProfileSnapshot(userId, { createIfMissing = true } = {
     userId: p.user_id,
     status: p.profile_status,
     paymentRequired: p.payment_required ?? false,
+    paymentStatus: paymentRes.data?.status ?? null,
+    paymentDetails: paymentRes.data ? {
+      status: paymentRes.data.status,
+      amount: paymentRes.data.amount,
+      utrNumber: paymentRes.data.utr_number,
+      submittedAt: paymentRes.data.submitted_at,
+      reviewedAt: paymentRes.data.reviewed_at,
+    } : null,
     completionPercent: p.completion_percent,
     rejectionReason: p.rejection_reason,
     updatedAt: p.updated_at,

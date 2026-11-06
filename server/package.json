@@ -11,7 +11,12 @@
     "test": "echo \"No tests yet\" && exit 1"
   },
   "type": "module",
-  "keywords": ["matrimony", "express", "supabase", "jwt"],
+  "keywords": [
+    "matrimony",
+    "express",
+    "supabase",
+    "jwt"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -24,6 +29,7 @@
     "express-rate-limit": "^8.3.0",
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
-    "multer": "^2.5.0"
+    "multer": "^2.5.0",
+    "nodemailer": "^10.3.1"
   }
 }

@@ -130,12 +130,56 @@
   background: #f5eae0;
 }
 
-.nav-link--locked {
-  color: #806f60;
+.nav-link--disabled {
+  color: #b8afa8;
+  cursor: not-allowed;
+  position: relative;
 }
 
-.nav-link--locked:hover {
-  color: var(--primary);
+.nav-link--disabled .sidebar-link-icon {
+  color: #c5bab2;
+}
+
+.nav-link--disabled:hover {
+  color: #b8afa8;
+  background: transparent;
+}
+
+.nav-link--disabled:hover .sidebar-link-icon {
+  color: #c5bab2;
+}
+
+/* Tooltip on hover */
+.nav-link-tooltip {
+  display: none;
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  white-space: nowrap;
+  padding: 6px 12px;
+  background: #3a2e28;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  z-index: 50;
+  pointer-events: none;
+}
+
+.nav-link-tooltip::before {
+  content: '';
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 5px solid transparent;
+  border-right-color: #3a2e28;
+}
+
+.nav-link--disabled:hover .nav-link-tooltip {
+  display: block;
 }
 
 .nav-link.active .sidebar-count {
