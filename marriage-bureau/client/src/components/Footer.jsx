@@ -14,7 +14,6 @@ export default function Footer() {
 
         <nav className="footer-col" aria-label="Explore">
           <p className="footer-heading">Explore</p>
-          <Link to="/about">About the Padmashali samaj</Link>
           <Link to="/how-it-works">How it works</Link>
           <Link to="/contact">Contact us</Link>
           <Link to="/terms">Terms &amp; privacy</Link>

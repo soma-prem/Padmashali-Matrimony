@@ -47,18 +47,15 @@ export default function MyRequests() {
     }
   }
 
-  const pendingCount = (items || []).filter((r) => r.status === 'pending').length
-
   return (
     <div className="dashboard-page">
-      <div className="dashboard-card">
+      <div className="dashboard-card requests-page-card">
         <h1 className="dashboard-title">My Requests</h1>
-        <p style={{ fontSize: 14 }}>
+        <p className="page-description">
           Interest requests you sent. The admin reviews every request — you will be
-          notified when it is approved or rejected. Pending limit: 5. Currently pending:{' '}
-          <strong>{pendingCount}</strong>.
+          notified when it is approved or rejected. You can have up to 5 pending requests.
         </p>
-        <div style={{ marginBottom: 14 }}>
+        <div className="page-return-link">
           <Link to="/browse" className="btn btn-outline btn-sm">← Browse profiles</Link>
         </div>
 

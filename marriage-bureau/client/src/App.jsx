@@ -2,7 +2,6 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import Navbar from './components/Navbar.jsx'
-import Footer from './components/Footer.jsx'
 import Toaster from './components/Toaster.jsx'
 
 import UserDashboard from './pages/UserDashboard.jsx'
@@ -15,7 +14,6 @@ import MyConnections from './pages/MyConnections.jsx'
 import Home from './pages/Home.jsx'
 import Register from './pages/Register.jsx'
 import Login from './pages/Login.jsx'
-import AboutSamaj from './pages/AboutSamaj.jsx'
 import HowItWorks from './pages/HowItWorks.jsx'
 import ContactUs from './pages/ContactUs.jsx'
 import TermsPrivacy from './pages/TermsPrivacy.jsx'
@@ -34,11 +32,12 @@ export default function App() {
       <AuthProvider>
         <div className="app-shell">
           <Navbar />
-          <main className="app-main">            <Routes>
+          <div className="app-workspace">
+            <main className="app-main">
+              <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/register" element={<Register />} />
               <Route path="/login" element={<Login />} />
-              <Route path="/about" element={<AboutSamaj />} />
               <Route path="/how-it-works" element={<HowItWorks />} />
               <Route path="/contact" element={<ContactUs />} />
               <Route path="/terms" element={<TermsPrivacy />} />
@@ -123,9 +122,9 @@ export default function App() {
               </Route>
 
               <Route path="*" element={<NotFound />} />
-            </Routes>
-          </main>
-          <Footer />
+              </Routes>
+            </main>
+          </div>
           <Toaster />
         </div>
       </AuthProvider>

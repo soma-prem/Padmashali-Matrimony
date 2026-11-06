@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom'
 import { api } from '../api/api.js'
 
 /**
- * Navbar bell — polls unread count every 30s (user role only).
- * Pass onClick to also close a mobile hamburger menu on tap.
+ * Sidebar notifications link — polls unread count every 30s (user role only).
+ * Pass onClick to close the mobile sidebar after navigation.
  */
 export default function NotificationBell({ onClick }) {
   const [unread, setUnread] = useState(0)
@@ -30,7 +30,8 @@ export default function NotificationBell({ onClick }) {
 
   return (
     <Link to="/notifications" className="notif-bell" onClick={onClick} aria-label={`Notifications${unread ? `, ${unread} unread` : ''}`}>
-      <span aria-hidden="true">🔔</span>
+      <span aria-hidden="true">♢</span>
+      <span>Notifications</span>
       {unread > 0 && <span className="bell-badge">{unread > 99 ? '99+' : unread}</span>}
     </Link>
   )

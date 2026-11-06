@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../../api/api.js'
 
 const STATUS_OPTIONS = [
@@ -119,9 +119,7 @@ export default function AdminProfilesPage() {
 
   return (
     <div>
-      <h1 className="dashboard-title" style={{ marginBottom: 16 }}>
-        Profiles &amp; Users <span style={{ fontWeight: 400, fontSize: 15 }}>({total})</span>
-      </h1>
+      <h1 className="dashboard-title" style={{ marginBottom: 16 }}>Profiles &amp; Users</h1>
 
       <div className="admin-filters">
         <input
@@ -206,10 +204,6 @@ export default function AdminProfilesPage() {
           </button>
         </div>
       )}
-
-      <p style={{ marginTop: 16, fontSize: 13 }}>
-        Need to review? Open <Link to="/admin/profiles?status=pending_approval">Pending Profiles</Link>.
-      </p>
     </div>
   )
 }

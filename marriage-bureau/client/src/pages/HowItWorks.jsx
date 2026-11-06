@@ -3,46 +3,48 @@ import { usePageMeta } from '../utils/usePageMeta.js'
 
 const STEPS = [
   {
-    no: '1',
+    no: '01',
     title: 'Create your profile',
-    text: 'Register with your email, then complete the 10-step profile — basic details, community (caste/kulam/gotra), horoscope with optional kundli image, education & career, family, lifestyle & location, photos (up to 6), partner preferences and contact details.',
-    note: 'Contact details stay private — only the admin and your approved match can ever see them.',
+    text: 'Register and fill in your details, community, horoscope, career, family, preferences and photos.',
+    note: 'Your contact details stay private until a connection is approved.',
   },
   {
-    no: '2',
+    no: '02',
     title: 'Admin verification',
-    text: 'Submit your profile for approval when it is at least 80% complete with at least one photo. Our admin verifies it — approving it or telling you exactly what to fix.',
-    note: 'You get an in-website notification at every step. No emails, no SMS.',
+    text: 'Submit your profile once it is at least 80% complete and has a photo. Our team reviews it and lets you know the result.',
+    note: 'Updates are available through in-website notifications.',
   },
   {
-    no: '3',
+    no: '03',
     title: 'Browse matches',
-    text: 'Once approved, you can browse all other approved profiles of the opposite gender. Filter by age, education, location, nakshatra or gotra. Full profiles — but never contact details.',
-    note: 'Verified photos, profession, family details and preferences are visible.',
+    text: 'After approval, explore approved profiles and filter by age, education, location, nakshatra or gotra.',
+    note: 'Browse profile details without exposing private contact information.',
   },
   {
-    no: '4',
+    no: '04',
     title: 'Connect through admin',
-    text: 'Send an interest request to the profile you like (up to 5 pending at a time). The admin personally reviews it. When approved, BOTH families become connected and see each other\u2019s contact details.',
-    note: 'This final step is what has always made samaj matchmaking trustworthy — the elders in the middle.',
+    text: 'Send an interest request. Our admin reviews it and helps both families make an introduction.',
+    note: 'Contact details are shared only after the connection is approved.',
   },
 ]
 
-export default function HowItWorks() {
+export default function HowItWorks({ embedded = false }) {
   usePageMeta(
     'How it works',
-    'Create profile → admin verification → browse matches → connect through the admin. Contact details unlock only for approved connections.'
+    'Create profile → admin verification → browse matches → connect through the admin. Contact details unlock only for approved connections.',
+    !embedded
   )
 
   return (
-    <div className="public-page">
-      <h1 className="public-title">How it works</h1>
-      <p className="section-sub">
-        A safe, admin-assisted process from start to finish — the way community matrimony has
-        always worked, brought online.
-      </p>
+    <div className="public-page how-page">
+      <header className="how-page-heading">
+        <h1 className="public-title">How it works</h1>
+        <p className="section-sub">
+          A simple, family-friendly process with guidance and privacy at every step.
+        </p>
+      </header>
 
-      <div className="steps how-vert">
+      <div className="steps how-steps">
         {STEPS.map((s) => (
           <div className="step-card" key={s.no}>
             <span className="step-number">{s.no}</span>
@@ -53,7 +55,7 @@ export default function HowItWorks() {
         ))}
       </div>
 
-      <div className="hero-actions" style={{ justifyContent: 'center', marginTop: 20 }}>
+      <div className="hero-actions how-actions">
         <Link to="/register" className="btn btn-primary btn-lg">Register Free</Link>
         <Link to="/contact" className="btn btn-outline btn-lg">Contact the admin team</Link>
       </div>

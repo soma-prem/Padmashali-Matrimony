@@ -4,6 +4,12 @@
   margin: 0 auto;
 }
 
+.admin-account-card {
+  width: 100%;
+  max-width: none;
+  text-align: left;
+}
+
 .admin-menu {
   display: flex;
   gap: 6px;
@@ -249,4 +255,64 @@
   border-radius: var(--radius);
   padding: 44px 20px;
   text-align: center;
+}
+
+@media (max-width: 640px) {
+  .admin-page {
+    width: 100%;
+  }
+
+  .stat-grid {
+    gap: 8px;
+  }
+
+  .stat-card {
+    padding: 14px 8px;
+  }
+
+  .stat-card .num {
+    font-size: 26px;
+  }
+
+  .admin-filters {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-filters .form-input,
+  .admin-filters .search {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .admin-list-item {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    padding: 12px;
+  }
+
+  .admin-item-main {
+    flex: 1 1 calc(100% - 70px);
+  }
+
+  .admin-item-actions {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .admin-item-actions .btn {
+    flex: 1 1 auto;
+  }
+
+  .admin-contact-box,
+  .reject-box,
+  .pane {
+    padding: 12px;
+  }
+
+  .admin-placeholder-big {
+    padding: 32px 16px;
+  }
 }

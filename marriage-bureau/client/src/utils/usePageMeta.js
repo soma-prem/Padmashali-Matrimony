@@ -4,8 +4,10 @@ import { useEffect } from 'react'
  * Sets the browser tab title and the meta description for SEO.
  * Usage (inside any page component):  usePageMeta('Title', 'Description')
  */
-export function usePageMeta(title, description) {
+export function usePageMeta(title, description, enabled = true) {
   useEffect(() => {
+    if (!enabled) return
+
     document.title = title
       ? `${title} · Padmashali Samaj Matrimony`
       : 'Padmashali Samaj Matrimony'
@@ -21,7 +23,7 @@ export function usePageMeta(title, description) {
       description ||
         'A trusted community matrimony platform for the Padmashali samaj — verified profiles, admin-assisted matchmaking.'
     )
-  }, [title, description])
+  }, [title, description, enabled])
 }
 
 export default usePageMeta

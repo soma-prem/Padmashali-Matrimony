@@ -65,7 +65,6 @@ export default function Browse() {
 
   const [items, setItems] = useState([])
   const [totalPages, setTotalPages] = useState(0)
-  const [total, setTotal] = useState(0)
   const [pageInfo, setPageInfo] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -79,7 +78,6 @@ export default function Browse() {
       const data = await api(`/browse?${qs.toString()}`)
       setItems(data.data.items)
       setTotalPages(data.data.totalPages)
-      setTotal(data.data.total)
       setPageInfo(data.data.page)
     } catch (err) {
       setError(err.message)
@@ -119,7 +117,7 @@ export default function Browse() {
   return (
     <div className="browse-page">
       <h1 className="dashboard-title" style={{ marginBottom: 14 }}>
-        Browse Profiles <span style={{ fontWeight: 400, fontSize: 15 }}>({total})</span>
+        Browse Profiles
       </h1>
 
       <form className="browse-filters" onSubmit={applyFilters}>

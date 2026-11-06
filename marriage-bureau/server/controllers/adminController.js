@@ -9,16 +9,23 @@ const VALID_PROFILE_STATUSES = ['pending_approval', 'approved', 'rejected', 'dra
 // ------------------------------------------------------------------
 export async function getStats(req, res, next) {
   try {
-    const [usersTotal, pendingProfiles, approvedProfiles, pendingRequests, totalConnections] =
-      await Promise.all([
+    const [
+      usersTotal,
+      totalProfiles,
+      pendingProfiles,
+      approvedProfiles,
+      pendingRequests,
+      totalConnections,
+    ] = await Promise.all([
         supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'user'),
+        supabase.from('profiles').select('user_id', { count: 'exact', head: true }),
         supabase.from('profiles').select('user_id', { count: 'exact', head: true }).eq('profile_status', 'pending_approval'),
         supabase.from('profiles').select('user_id', { count: 'exact', head: true }).eq('profile_status', 'approved'),
         supabase.from('interest_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('connections').select('id', { count: 'exact', head: true }),
       ])
 
-    for (const r of [usersTotal, pendingProfiles, approvedProfiles, pendingRequests, totalConnections]) {
+    for (const r of [usersTotal, totalProfiles, pendingProfiles, approvedProfiles, pendingRequests, totalConnections]) {
       if (r.error) throw r.error
     }
 
@@ -26,6 +33,7 @@ export async function getStats(req, res, next) {
       success: true,
       data: {
         totalUsers: usersTotal.count ?? 0,
+        totalProfiles: totalProfiles.count ?? 0,
         pendingProfiles: pendingProfiles.count ?? 0,
         approvedProfiles: approvedProfiles.count ?? 0,
         pendingRequests: pendingRequests.count ?? 0,   // always 0 until Stage 4

@@ -45,11 +45,11 @@ export default function MyConnections() {
     <div className="dashboard-page">
       <div className="dashboard-card wide">
         <h1 className="dashboard-title">My Connections</h1>
-        <p style={{ fontSize: 14, textAlign: 'center' }}>
-          ✅ People approved by the admin as your matches. Contact details are visible
+        <p className="page-description">
+          People approved by the admin as your matches. Contact details are visible
           below — only on this page and your approved matches' own view.
         </p>
-        <div style={{ marginBottom: 14, textAlign: 'center' }}>
+        <div className="page-return-link">
           <Link to="/browse" className="btn btn-outline btn-sm">← Browse profiles</Link>
         </div>
 

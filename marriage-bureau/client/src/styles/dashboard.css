@@ -15,6 +15,10 @@
   text-align: center;
 }
 
+.requests-page-card {
+  max-width: 1000px;
+}
+
 .dashboard-title {
   margin: 0 0 6px;
   font-size: 28px;
@@ -103,4 +107,32 @@
 
 .notifications-empty p {
   margin: 4px 0;
+}
+
+@media (max-width: 640px) {
+  .dashboard-page {
+    padding: 8px 0;
+  }
+
+  .dashboard-card {
+    max-width: none;
+    padding: 24px 18px;
+    border-radius: 16px;
+  }
+
+  .dashboard-title {
+    font-size: clamp(23px, 7vw, 28px);
+  }
+
+  .dashboard-actions {
+    align-items: stretch;
+  }
+
+  .dashboard-actions .btn {
+    flex: 1 1 145px;
+  }
+
+  .pagination {
+    flex-wrap: wrap;
+  }
 }

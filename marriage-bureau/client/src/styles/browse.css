@@ -4,6 +4,18 @@
   margin: 0 auto;
 }
 
+.page-return-link {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 14px;
+}
+
+.page-description {
+  margin: 0 0 14px;
+  font-size: 14px;
+  text-align: left;
+}
+
 /* filter bar */
 .browse-filters {
   display: grid;
@@ -197,7 +209,7 @@
 
 /* full-width card for the detail page */
 .dashboard-card.wide {
-  max-width: 900px;
+  max-width: 1100px;
   margin: 0 auto;
 }
 
@@ -221,7 +233,7 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: 14px;
-  max-width: 900px;
+  max-width: 1100px;
   margin: 0 auto;
 }
 
@@ -296,4 +308,82 @@
 .pane .review-group {
   border-color: var(--accent-soft);
   margin-top: 10px;
+}
+
+@media (max-width: 640px) {
+  .browse-page,
+  .admin-page {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .browse-filters {
+    padding: 12px;
+  }
+
+  .browse-filters-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .browse-filters-actions .btn {
+    width: 100%;
+    padding-inline: 8px;
+  }
+
+  .browse-grid {
+    gap: 10px;
+  }
+
+  .request-row {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    padding: 12px;
+  }
+
+  .request-row-main {
+    flex: 1 1 calc(100% - 60px);
+  }
+
+  .request-row-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .detail-name {
+    font-size: 21px;
+  }
+
+  .detail-headline {
+    min-width: 0;
+  }
+
+  .conn-card {
+    padding: 14px;
+  }
+
+  .conn-contact-list div {
+    align-items: flex-start;
+  }
+
+  .conn-contact-list .v {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    text-align: right;
+  }
+
+  .pagination {
+    gap: 8px;
+  }
+}
+
+@media (max-width: 380px) {
+  .browse-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .page-return-link .btn {
+    width: 100%;
+  }
 }

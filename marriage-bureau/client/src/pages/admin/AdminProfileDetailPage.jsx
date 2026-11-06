@@ -117,7 +117,7 @@ export default function AdminProfileDetailPage() {
       </div>
 
       {/* account box */}
-      <div className="dashboard-card" style={{ padding: '16px 18px', marginBottom: 14 }}>
+      <div className="dashboard-card admin-account-card" style={{ padding: '16px 18px', marginBottom: 14 }}>
         <div className="review-list">
           <Row k="Account name" v={account.name} />
           <Row k="Email" v={account.email} />

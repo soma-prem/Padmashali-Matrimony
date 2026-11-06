@@ -4,10 +4,11 @@ import { usePageMeta } from '../utils/usePageMeta.js'
 
 import { Link } from 'react-router-dom'
 
-export default function ContactUs() {
+export default function ContactUs({ embedded = false }) {
   usePageMeta(
     'Contact us',
-    'Questions or profile assistance? Send a message to the Padmashali Matrimony admin team.'
+    'Questions or profile assistance? Send a message to the Padmashali Matrimony admin team.',
+    !embedded
   )
 
   const [form, setForm] = useState({ name: '', email: '', phone: '', subject: '', message: '' })
@@ -38,11 +39,6 @@ export default function ContactUs() {
   return (
     <div className="public-page">
       <h1 className="public-title">Contact us</h1>
-      <p className="section-sub">
-        Questions about a profile, about the process, or facing a technical problem? Write to the
-        admin team — messages are reviewed in our admin panel (never shared, never emailed to third parties).
-      </p>
-
       {sent && (
         <div className="form-success" role="status">
           ✔ Thank you! Your message has been received. The admin team will get back to you soon.

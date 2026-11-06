@@ -61,16 +61,16 @@ export async function listContactMessages(req, res, next) {
 
     let query = supabase
       .from('contact_messages')
-      .select('id, name, email, phone, subject, message, is_handled, created_at')
+      .select('id, name, email, phone, subject, message, is_handled, created_at', { count: 'exact' })
       .order('created_at', { ascending: false })
       .limit(100)
     if (filter === 'open') query = query.eq('is_handled', false)
     if (filter === 'handled') query = query.eq('is_handled', true)
 
-    const { data, error } = await query
+    const { data, count, error } = await query
     if (error) throw error
 
-    res.json({ success: true, data: { items: data, filter } })
+    res.json({ success: true, data: { items: data, filter, count: count ?? 0 } })
   } catch (err) {
     next(err)
   }
