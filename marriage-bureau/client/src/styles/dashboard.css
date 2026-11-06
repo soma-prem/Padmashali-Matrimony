@@ -1,0 +1,106 @@
+.dashboard-page {
+  display: flex;
+  justify-content: center;
+  padding: 30px 0;
+}
+
+.dashboard-card {
+  width: 100%;
+  max-width: 560px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 34px 30px;
+  text-align: center;
+}
+
+.dashboard-title {
+  margin: 0 0 6px;
+  font-size: 28px;
+  color: var(--text-h);
+}
+
+.dashboard-title .accent {
+  color: var(--primary);
+}
+
+.dashboard-sub {
+  margin: 0 0 22px;
+  font-size: 15px;
+}
+
+.dashboard-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.dashboard-hint {
+  margin: 22px auto 0;
+  max-width: 430px;
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px dashed var(--accent);
+  border-radius: var(--radius-sm);
+}
+
+.admin-card {
+  max-width: 640px;
+}
+
+.admin-placeholder {
+  padding: 26px 18px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+}
+
+/* ===== Stage 2: status + completion on dashboard ===== */
+.dash-status {
+  margin: 0 0 22px;
+  padding: 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  text-align: left;
+}
+
+.dash-percent {
+  font-size: 14px;
+  color: var(--text-h);
+}
+
+.dash-status-message {
+  margin: 12px 0 4px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.dash-status-reason {
+  margin: 6px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--error);
+}
+
+.dash-action-btn {
+  margin-top: 12px;
+}
+
+/* notifications placeholder */
+.notifications-empty {
+  padding: 34px 18px;
+  background: var(--bg);
+  border: 1px dashed var(--accent);
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+}
+
+.notifications-empty p {
+  margin: 4px 0;
+}

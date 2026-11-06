@@ -1,0 +1,131 @@
+.navbar {
+  background: var(--primary);
+  padding: 10px 16px;
+}
+
+.navbar-inner {
+  max-width: 1040px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.navbar-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  text-decoration: none;
+  font-size: 17px;
+  letter-spacing: 0.2px;
+}
+
+.brand-heart {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--primary-deep);
+  font-size: 17px;
+}
+
+.brand-text b {
+  color: var(--accent-soft);
+}
+
+.navbar-links {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.nav-link {
+  color: var(--bg);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
+.nav-link:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* active route gets light-sky text */
+.nav-link.active {
+  color: var(--accent-soft);
+}
+
+.nav-register {
+  color: var(--primary-deep);
+  background: var(--accent);
+}
+
+.nav-register:hover {
+  filter: brightness(1.08);
+}
+
+.navbar-logout {
+  color: var(--bg);
+  border-color: var(--bg);
+  background: transparent;
+}
+
+.navbar-logout:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* ===== Stage 5: mobile hamburger ===== */
+.nav-burger {
+  display: none; /* desktop default hidden */
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: #fff;
+  border-radius: 8px;
+  font-size: 18px;
+  width: 42px;
+  height: 40px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 900px) {
+  .nav-burger {
+    display: inline-flex;
+  }
+
+  .navbar-inner {
+    flex-wrap: nowrap;
+  }
+
+  .navbar-links {
+    display: none;
+    flex-basis: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    padding: 10px 4px 14px;
+  }
+
+  .navbar-links.is-open {
+    display: flex;
+  }
+
+  .navbar-links .nav-link,
+  .navbar-links .btn {
+    text-align: left;
+    justify-content: flex-start;
+  }
+
+  .nav-register {
+    margin-top: 4px;
+  }
+}
