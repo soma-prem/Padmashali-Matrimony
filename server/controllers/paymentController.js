@@ -195,11 +195,12 @@ export async function sendPaymentRequest(req, res, next) {
 // GET /api/admin/payments
 export async function listPaymentSubmissions(req, res, next) {
   try {
+    const status = req.query.status === 'verified' ? 'verified' : 'submitted'
     const { data: rows, error } = await supabase
       .from('membership_payments')
-      .select('id, user_id, amount, qr_image_url, status, request_sent_at, utr_number, payment_screenshot_url, submitted_at')
-      .eq('status', 'submitted')
-      .order('submitted_at', { ascending: false })
+      .select('id, user_id, amount, qr_image_url, status, request_sent_at, utr_number, payment_screenshot_url, submitted_at, reviewed_at')
+      .eq('status', status)
+      .order(status === 'verified' ? 'reviewed_at' : 'submitted_at', { ascending: false })
     if (error) throw error
 
     const userIds = rows.map((row) => row.user_id)
@@ -225,6 +226,7 @@ export async function listPaymentSubmissions(req, res, next) {
           accountEmail: users[row.user_id]?.email,
           profileName: profiles[row.user_id]?.name,
         })),
+        status,
       },
     })
   } catch (err) {

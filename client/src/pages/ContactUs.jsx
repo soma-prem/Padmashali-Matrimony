@@ -11,24 +11,18 @@ export default function ContactUs({ embedded = false }) {
 
   const [form, setForm] = useState({ name: '', email: '', phone: '', subject: '', message: '' })
   const [sending, setSending] = useState(false)
-  const [error, setError] = useState('')
-  const [sent, setSent] = useState(false)
 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
 
   const submit = async (e) => {
     e.preventDefault()
     setSending(true)
-    setError('')
     try {
-      const data = await api('/contact', { method: 'POST', body: form })
+      await api('/contact', { method: 'POST', body: form })
       toast.success('Message sent!')
-      setSent(true)
-      // reset the form but keep showing the success note
       setForm({ name: '', email: '', phone: '', subject: '', message: '' })
-      return data
     } catch (err) {
-      setError(err.message)
+      toast.error(err.message)
     } finally {
       setSending(false)
     }
@@ -37,12 +31,6 @@ export default function ContactUs({ embedded = false }) {
   return (
     <div className="public-page">
       <h1 className="public-title">Contact us</h1>
-      {sent && (
-        <div className="form-success" role="status">
-          ✔ Thank you! Your message has been received. The admin team will get back to you soon.
-        </div>
-      )}
-      {error && <p className="form-error" role="alert">{error}</p>}
 
       <form className="contact-form" onSubmit={submit}>
         <div className="form-grid">

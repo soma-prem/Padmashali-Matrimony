@@ -342,7 +342,11 @@ async function getProfileRowOr404(userId) {
 // Stage 5 — contact messages from the public Contact Us form
 // ===========================================================================
 
-export { listContactMessages, setContactMessageHandled } from './contactController.js'
+export {
+  listContactMessages,
+  setContactMessageHandled,
+  replyToContactMessage,
+} from './contactController.js'
 
 // ===========================================================================
 // Stage 4 — interest requests & connections

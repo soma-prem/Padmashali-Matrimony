@@ -47,3 +47,31 @@ export async function sendOTPEmail(toEmail, otp) {
     `,
   })
 }
+
+const escapeHtml = (value) => String(value)
+  .replaceAll('&', '&amp;')
+  .replaceAll('<', '&lt;')
+  .replaceAll('>', '&gt;')
+  .replaceAll('"', '&quot;')
+  .replaceAll("'", '&#39;')
+
+export async function sendContactReplyEmail(toEmail, recipientName, reply, originalSubject) {
+  const from = process.env.SMTP_FROM || process.env.SMTP_USER
+  const subject = String(originalSubject || 'Your message to Padmashali Matrimony')
+    .replace(/[\r\n]+/g, ' ')
+    .trim()
+
+  await transporter.sendMail({
+    from,
+    to: toEmail,
+    subject: `Re: ${subject}`,
+    text: `Hello ${recipientName},\n\n${reply}\n\nPadmashali Matrimony Admin Team`,
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;">
+        <p>Hello ${escapeHtml(recipientName)},</p>
+        <p style="white-space:pre-wrap;">${escapeHtml(reply)}</p>
+        <p>Padmashali Matrimony Admin Team</p>
+      </div>
+    `,
+  })
+}

@@ -10,6 +10,7 @@ function fmtDate(value) {
 }
 
 export default function AdminPaymentsPage() {
+  const [tab, setTab] = useState('submitted')
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -20,7 +21,7 @@ export default function AdminPaymentsPage() {
     setLoading(true)
     setError('')
     try {
-      const response = await api('/admin/payments')
+      const response = await api(`/admin/payments?status=${tab}`)
       setItems(response.data.items)
     } catch (err) {
       setError(err.message)
@@ -29,7 +30,7 @@ export default function AdminPaymentsPage() {
     }
   }
 
-  useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load() }, [tab]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const runAction = async (item, action) => {
     setConfirmation(null)
@@ -49,11 +50,23 @@ export default function AdminPaymentsPage() {
 
   return (
     <div>
-      <h1 className="dashboard-title" style={{ marginBottom: 16 }}>Payment verification</h1>
+      <h1 className="dashboard-title" style={{ marginBottom: 16 }}>Payments</h1>
+      <div className="admin-filters">
+        <button type="button" className={`btn btn-sm ${tab === 'submitted' ? 'btn-primary' : 'btn-outline'}`}
+          onClick={() => setTab('submitted')}>
+          Needs verification
+        </button>
+        <button type="button" className={`btn btn-sm ${tab === 'verified' ? 'btn-primary' : 'btn-outline'}`}
+          onClick={() => setTab('verified')}>
+          Completed
+        </button>
+      </div>
       {error && <p className="form-error" role="alert">{error}</p>}
-      {loading && <div className="page-loading">Loading payment submissions…</div>}
+      {loading && <div className="page-loading">Loading payments…</div>}
       {!loading && !error && items.length === 0 && (
-        <div className="notifications-empty">No payments are waiting for verification.</div>
+        <div className="notifications-empty">
+          {tab === 'verified' ? 'No completed payments yet.' : 'No payments are waiting for verification.'}
+        </div>
       )}
 
       <div className="admin-list">
@@ -64,8 +77,14 @@ export default function AdminPaymentsPage() {
                 <h2>{item.profileName || item.accountName || 'Member'}</h2>
                 <p>{item.accountEmail}</p>
                 <p>Submitted: {fmtDate(item.submittedAt)}</p>
+                {item.status === 'verified' && <p>Completed: {fmtDate(item.reviewedAt)}</p>}
               </div>
               <Link to={`/admin/profiles/${item.userId}`} className="btn btn-outline btn-sm">View profile</Link>
+            </div>
+            <div className="admin-payment-status">
+              <span className={`status-chip ${item.status === 'verified' ? 'status-chip--approved' : 'status-chip--pending_approval'}`}>
+                {item.status === 'verified' ? 'completed' : 'awaiting verification'}
+              </span>
             </div>
             <div className="admin-payment-data">
               <div><strong>Amount</strong><span>₹{Number(item.amount).toLocaleString('en-IN')}</span></div>
@@ -84,7 +103,7 @@ export default function AdminPaymentsPage() {
                   className="admin-payment-proof-image" />
               </div>
             </div>
-            <div className="admin-payment-actions">
+            {item.status === 'submitted' && <div className="admin-payment-actions">
               <button type="button" className="btn btn-primary" disabled={busyId === item.id}
                 onClick={() => setConfirmation({
                   title: 'Verify this payment?',
@@ -104,7 +123,7 @@ export default function AdminPaymentsPage() {
                 })}>
                 Request resubmission
               </button>
-            </div>
+            </div>}
           </article>
         ))}
       </div>

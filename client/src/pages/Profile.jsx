@@ -12,6 +12,7 @@ import StepReview from '../components/profileSteps/StepReview.jsx'
 import { SUBMIT_MIN_PERCENT } from '../utils/profileOptions.js'
 import { calculateProfileCompletion } from '../utils/profileCompletion.js'
 import { useAuth } from '../context/AuthContext.jsx'
+import ProfileTimeline from '../components/ProfileTimeline.jsx'
 
 const STEPS = [
   { key: 'basic', title: 'Basic', Component: StepBasic, saveable: true },
@@ -29,7 +30,6 @@ const REVIEW_SECTION_KEYS = STEPS.filter((step) => step.key !== 'review').map((s
 const STATUS_MESSAGES = {
   draft: 'Complete your profile — fill every step and submit for approval.',
   pending_approval: 'Your profile is under review. You will be notified.',
-  approved: '✅ Your profile is approved!',
   rejected: '',
 }
 
@@ -206,25 +206,38 @@ export default function Profile() {
     <div className="profile-page">
       {/* top bar: status + completion */}
       <div className="profile-topbar">
-        <div className="profile-topbar-row">
-          <span className="profile-step-label">
-            Step {step + 1} of {STEPS.length} — {current.title}
-          </span>
-          <span className={`status-chip status-chip--${profile.status}`}>
-            {profile.status === 'draft' && 'Draft'}
-            {profile.status === 'pending_approval' && 'Under review'}
-            {profile.status === 'approved' && 'Approved'}
-            {profile.status === 'rejected' && 'Rejected — fix & resubmit'}
-          </span>
-        </div>
+        {profile.status === 'approved' ? (
+          <div className="profile-status-timeline">
+            <ProfileTimeline
+              status={profile.status}
+              paymentStatus={profile.paymentStatus}
+              paymentRequired={profile.paymentRequired}
+              variant="compact"
+              title={null}
+            />
+          </div>
+        ) : (
+          <>
+            <div className="profile-topbar-row">
+              <span className="profile-step-label">
+                Step {step + 1} of {STEPS.length} — {current.title}
+              </span>
+              <span className={`status-chip status-chip--${profile.status}`}>
+                {profile.status === 'draft' && 'Draft'}
+                {profile.status === 'pending_approval' && 'Under review'}
+                {profile.status === 'rejected' && 'Rejected — fix & resubmit'}
+              </span>
+            </div>
 
-        <div className="profile-progress-row">
-          <span>Profile completion</span>
-          <span><strong>{percent}%</strong> (need {SUBMIT_MIN_PERCENT}% to submit)</span>
-        </div>
-        <div className="profile-progress" role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}>
-          <div className="profile-progress-fill" style={{ width: `${percent}%` }} />
-        </div>
+            <div className="profile-progress-row">
+              <span>Profile completion</span>
+              <span><strong>{percent}%</strong> (need {SUBMIT_MIN_PERCENT}% to submit)</span>
+            </div>
+            <div className="profile-progress" role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}>
+              <div className="profile-progress-fill" style={{ width: `${percent}%` }} />
+            </div>
+          </>
+        )}
       </div>
 
       {/* status banners */}
@@ -233,15 +246,10 @@ export default function Profile() {
           ❌ Your profile was rejected{profile.rejectionReason ? `: ${profile.rejectionReason}` : ''}
         </div>
       )}
-      {readOnly && (
+      {readOnly && profile.status !== 'approved' && (
         <div className="profile-banner profile-banner--info">
           {STATUS_MESSAGES[profile.status]} The form is read-only until the admin approves it
           {' '}(or asks for changes).
-        </div>
-      )}
-      {readOnly && profile.status === 'approved' && (
-        <div className="profile-banner profile-banner--success">
-          You can browse other profiles once Stage&nbsp;4 goes live.
         </div>
       )}
       {/* step content */}

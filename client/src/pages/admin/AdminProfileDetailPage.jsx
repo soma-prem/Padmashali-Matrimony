@@ -4,6 +4,7 @@ import { api, apiUpload } from '../../api/api.js'
 import { formatSiblingDetails } from '../../utils/family.js'
 import ConfirmDialog from '../../components/admin/ConfirmDialog.jsx'
 import PhotoPreview from '../../components/admin/PhotoPreview.jsx'
+import ProfileTimeline from '../../components/ProfileTimeline.jsx'
 
 function ReviewGroup({ title, children }) {
   return (
@@ -62,8 +63,7 @@ export default function AdminProfileDetailPage() {
     setConfirmation(null)
     setBusy(true); setActionError(''); setMessage('')
     try {
-      const data = await api(`/admin/profiles/${userId}/approve`, { method: 'POST' })
-      setMessage(data.message || 'Profile approved.')
+      await api(`/admin/profiles/${userId}/approve`, { method: 'POST' })
       await load()
     } catch (err) {
       setActionError(err.message)
@@ -106,14 +106,13 @@ export default function AdminProfileDetailPage() {
     setActionError('')
     setMessage('')
     try {
-      const data = await apiUpload(`/admin/profiles/${userId}/payment-request`, {
+      await apiUpload(`/admin/profiles/${userId}/payment-request`, {
         file: paymentQr,
         fields: { amount: paymentAmount },
       })
       setPaymentQr(null)
       setPaymentInputKey((key) => key + 1)
       setPaymentAmount('')
-      setMessage(data.message || 'Payment request sent.')
       await load()
     } catch (err) {
       setActionError(err.message)
@@ -155,12 +154,6 @@ export default function AdminProfileDetailPage() {
       <div className="admin-detail-top">
         <div>
           <h1 className="dashboard-title" style={{ marginBottom: 4 }}>{profile.basic?.name || 'Profile'}</h1>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-            <span className={`status-chip status-chip--${profile.status}`}>
-              {profile.status.replace('_', ' ')}
-            </span>
-            <span style={{ fontSize: 13 }}>{profile.completionPercent}% complete</span>
-          </div>
         </div>
         <Link to="/admin/profiles" className="btn btn-outline btn-sm">← Back to list</Link>
       </div>
@@ -181,6 +174,18 @@ export default function AdminProfileDetailPage() {
           </p>
         )}
       </div>
+
+      {profile.status === 'approved' && (
+        <div className="profile-status-timeline">
+          <ProfileTimeline
+            status={profile.status}
+            paymentStatus={payment?.status}
+            paymentRequired={profile.paymentRequired}
+            variant="compact"
+            title={null}
+          />
+        </div>
+      )}
 
       <div className="wizard-card" style={{ marginBottom: 14 }}>
         {message && <div className="profile-banner profile-banner--success" role="status">✔ {message}</div>}

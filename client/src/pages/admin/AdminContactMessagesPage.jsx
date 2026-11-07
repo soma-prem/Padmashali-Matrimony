@@ -18,6 +18,8 @@ export default function AdminContactMessagesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [busyId, setBusyId] = useState(null)
+  const [replyingId, setReplyingId] = useState(null)
+  const [replyDrafts, setReplyDrafts] = useState({})
 
   const load = async () => {
     setLoading(true)
@@ -51,12 +53,40 @@ export default function AdminContactMessagesPage() {
     }
   }
 
+  const sendReply = async (event, msg) => {
+    event.preventDefault()
+    const reply = (replyDrafts[msg.id] || '').trim()
+    if (!reply) {
+      toast.error('Please write a reply before sending.')
+      return
+    }
+
+    setReplyingId(msg.id)
+    try {
+      const data = await api(`/admin/messages/${msg.id}/reply`, {
+        method: 'POST',
+        body: { reply },
+      })
+      toast.success(`Reply emailed to ${msg.email}.`)
+      setItems((messages) => messages.map((item) => (
+        item.id === msg.id
+          ? { ...item, replies: [...(item.replies || []), data.data.reply] }
+          : item
+      )))
+      setReplyDrafts((drafts) => ({ ...drafts, [msg.id]: '' }))
+    } catch (err) {
+      toast.error(err.message)
+    } finally {
+      setReplyingId(null)
+    }
+  }
+
   return (
     <div>
       <h1 className="dashboard-title" style={{ marginBottom: 12 }}>Contact Messages</h1>
       <p style={{ fontSize: 14, marginBottom: 14 }}>
         Messages sent by visitors through the <strong>Contact Us</strong> page.
-        Reply by email/phone — every message carries the sender's contact.
+        Reply to visitors directly by email.
       </p>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
@@ -95,6 +125,44 @@ export default function AdminContactMessagesPage() {
                   {m.is_handled ? 'handled' : 'open'}
                 </span>
               </div>
+              {(m.replies || []).length > 0 && (
+                <div className="contact-reply-history">
+                  <h3>Email replies</h3>
+                  {m.replies.map((reply) => (
+                    <div className="contact-reply-history-item" key={reply.id}>
+                      <div className="admin-item-meta">
+                        <span className={`status-chip ${reply.status === 'sent' ? 'status-chip--approved' : 'status-chip--pending_approval'}`}>
+                          {reply.status === 'sent' ? 'sent' : reply.status === 'failed' ? 'failed' : 'sending'}
+                        </span>
+                        <span>{reply.status === 'sent' ? 'Sent' : 'Attempted'}: {fmt(reply.sent_at || reply.created_at)}</span>
+                        <span>Email: {reply.recipient_email}</span>
+                      </div>
+                      <div className="contact-reply-history-content">{reply.response}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {m.email && (
+                <form className="contact-reply-form" onSubmit={(event) => sendReply(event, m)}>
+                  <label htmlFor={`reply-${m.id}`}>Email reply</label>
+                  <textarea
+                    id={`reply-${m.id}`}
+                    className="form-input"
+                    rows={4}
+                    maxLength={4000}
+                    required
+                    value={replyDrafts[m.id] || ''}
+                    onChange={(event) => setReplyDrafts((drafts) => ({
+                      ...drafts,
+                      [m.id]: event.target.value,
+                    }))}
+                  />
+                  <button type="submit" className="btn btn-primary btn-sm"
+                    disabled={replyingId === m.id}>
+                    {replyingId === m.id ? 'Sending…' : 'Send email reply'}
+                  </button>
+                </form>
+              )}
             </div>
             <div className="request-row-actions">
               <button type="button" className={`btn btn-sm ${m.is_handled ? 'btn-outline' : 'btn-primary'}`}
@@ -102,9 +170,6 @@ export default function AdminContactMessagesPage() {
                 onClick={() => toggleHandled(m)}>
                 {busyId === m.id ? 'Please wait…' : m.is_handled ? 'Reopen' : 'Mark handled'}
               </button>
-              {m.email && (
-                <a className="btn btn-outline btn-sm" href={`mailto:${m.email}`}>Reply by email</a>
-              )}
             </div>
           </div>
         ))}

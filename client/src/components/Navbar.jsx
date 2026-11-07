@@ -20,8 +20,7 @@ const USER_LINKS = [
 
 const ADMIN_LINKS = [
   { to: '/admin', label: 'Dashboard', icon: '▦', end: true },
-  { to: '/admin/profiles?status=pending_approval', label: 'Pending profiles', icon: '◷', end: true, countKey: 'pendingProfiles' },
-  { to: '/admin/profiles', label: 'All profiles', icon: '♙', countKey: 'totalProfiles' },
+  { to: '/admin/profiles', label: 'Profiles', icon: '♙', countKey: 'pendingProfiles' },
   { to: '/admin/requests', label: 'Requests', icon: '↗', countKey: 'pendingRequests' },
   { to: '/admin/connections', label: 'Connections', icon: '♧', countKey: 'totalConnections' },
   { to: '/admin/messages', label: 'Contact messages', icon: '✉', countKey: 'openMessages' },
@@ -134,15 +133,6 @@ export default function Navbar() {
             const count = countKey === 'openMessages'
               ? openMessagesCount
               : adminCounts?.[countKey]
-            const isPendingProfiles = to.includes('status=pending_approval')
-            const isAllProfiles = to === '/admin/profiles'
-            const isAdminProfiles = location.pathname === '/admin/profiles'
-            const exactMatch = isPendingProfiles
-              ? location.pathname === '/admin/profiles' && new URLSearchParams(location.search).get('status') === 'pending_approval'
-              : isAllProfiles
-                ? isAdminProfiles && new URLSearchParams(location.search).get('status') !== 'pending_approval'
-                : undefined
-
             if (disabled || pendingCheck) {
               return (
                 <span
@@ -163,7 +153,7 @@ export default function Navbar() {
                 key={to}
                 to={to}
                 end={end}
-                className={({ isActive }) => `nav-link${(exactMatch ?? isActive) ? ' active' : ''}`}
+                className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
                 aria-label={label}
                 onClick={close}
               >

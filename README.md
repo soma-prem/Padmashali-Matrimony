@@ -62,9 +62,10 @@ Then open a terminal and check: `node -v` and `npm -v` both print a version.
 1. Register at <https://supabase.com> → **New project** (choose a region near you).
 2. Open **SQL Editor → New query**, paste the entire contents of
    **`server/db/schema.sql`** and press **Run**. This creates every table.
-3. Run the two small migrations the same way (each is safe to re-run):
+3. Run the two small migrations the same way (each is safe to re-run; re-run
+   `migrations_stage5.sql` on existing databases to add email reply history):
    - `server/db/migrations_stage2.sql` (adds Cloudinary `public_id` columns)
-   - `server/db/migrations_stage5.sql` (adds the `contact_messages` table)
+   - `server/db/migrations_stage5.sql` (adds the contact messages and email reply history tables)
 4. Get your keys: **Project Settings → API**. You need:
    - `Project URL` → this is `SUPABASE_URL`
    - `service_role` key (in the secret box) → this is `SUPABASE_SERVICE_ROLE_KEY`
@@ -94,6 +95,12 @@ JWT_SECRET=change-this-to-a-long-random-string
 
 SUPABASE_URL=https://YOUR_PROJECT.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-google-app-password
+SMTP_FROM="Padmashali Matrimony <your-email@gmail.com>"
 
 CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key

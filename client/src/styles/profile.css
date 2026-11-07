@@ -53,6 +53,80 @@
   color: var(--text);
 }
 
+.profile-status-timeline {
+  overflow-x: auto;
+  margin-bottom: 14px;
+  padding: 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.profile-topbar .profile-status-timeline {
+  margin-bottom: 0;
+}
+
+.profile-status-timeline .pt-compact {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 610px;
+}
+
+.profile-status-timeline .pt-compact-step {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+}
+
+.profile-status-timeline .pt-compact-title {
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.profile-status-timeline .pt-icon {
+  display: grid;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.profile-status-timeline .pt-step--completed .pt-icon {
+  color: var(--success);
+  background: #e2f6ea;
+}
+
+.profile-status-timeline .pt-step--in_progress .pt-icon {
+  color: #8a6100;
+  background: #fff4d6;
+}
+
+.profile-status-timeline .pt-step--pending .pt-icon {
+  color: var(--text);
+  background: var(--accent-soft);
+}
+
+.profile-status-timeline .pt-step--rejected .pt-icon {
+  color: var(--error);
+  background: #fdeeec;
+}
+
+.profile-status-timeline .pt-compact-arrow {
+  flex: 0 0 auto;
+  color: var(--text);
+}
+
 /* status chip */
 .status-chip {
   display: inline-block;

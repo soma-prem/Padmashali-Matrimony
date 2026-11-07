@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase.js'
 import { AppError } from '../utils/AppError.js'
+import { sendContactReplyEmail } from '../utils/mailer.js'
 
 const clean = (value, max) => {
   const t = String(value ?? '').trim().slice(0, max)
@@ -70,7 +71,29 @@ export async function listContactMessages(req, res, next) {
     const { data, count, error } = await query
     if (error) throw error
 
-    res.json({ success: true, data: { items: data, filter, count: count ?? 0 } })
+    const messageIds = data.map((item) => item.id)
+    let repliesByMessage = {}
+    if (messageIds.length > 0) {
+      const { data: replies, error: repliesError } = await supabase
+        .from('contact_message_replies')
+        .select('id, contact_message_id, recipient_email, response, status, sent_at, created_at')
+        .in('contact_message_id', messageIds)
+        .order('created_at', { ascending: true })
+      if (repliesError) throw repliesError
+
+      repliesByMessage = replies.reduce((grouped, reply) => {
+        grouped[reply.contact_message_id] ??= []
+        grouped[reply.contact_message_id].push(reply)
+        return grouped
+      }, {})
+    }
+
+    const items = data.map((item) => ({
+      ...item,
+      replies: repliesByMessage[item.id] || [],
+    }))
+
+    res.json({ success: true, data: { items, filter, count: count ?? 0 } })
   } catch (err) {
     next(err)
   }
@@ -92,6 +115,64 @@ export async function setContactMessageHandled(req, res, next) {
     if (!data || data.length === 0) throw new AppError('Message not found.', 404)
 
     res.json({ success: true, message: isHandled ? 'Marked as handled.' : 'Marked as open.' })
+  } catch (err) {
+    next(err)
+  }
+}
+
+// POST /api/admin/messages/:id/reply  body: { reply }
+export async function replyToContactMessage(req, res, next) {
+  try {
+    const reply = typeof req.body?.reply === 'string' ? req.body.reply.trim() : ''
+    if (!reply || reply.length > 4000) {
+      throw new AppError('Write a reply of no more than 4000 characters.', 400)
+    }
+
+    const { data: message, error } = await supabase
+      .from('contact_messages')
+      .select('name, email, subject')
+      .eq('id', req.params.id)
+      .maybeSingle()
+    if (error) throw error
+    if (!message) throw new AppError('Message not found.', 404)
+
+    const { data: replyRecord, error: insertError } = await supabase
+      .from('contact_message_replies')
+      .insert({
+        contact_message_id: req.params.id,
+        recipient_email: message.email,
+        response: reply,
+        status: 'sending',
+      })
+      .select('id, contact_message_id, recipient_email, response, status, sent_at, created_at')
+      .single()
+    if (insertError) throw insertError
+
+    try {
+      await sendContactReplyEmail(message.email, message.name, reply, message.subject)
+    } catch (mailError) {
+      const { error: updateError } = await supabase
+        .from('contact_message_replies')
+        .update({ status: 'failed' })
+        .eq('id', replyRecord.id)
+      if (updateError) throw updateError
+      throw mailError
+    }
+
+    const sentAt = new Date().toISOString()
+    const { data: sentReply, error: updateError } = await supabase
+      .from('contact_message_replies')
+      .update({ status: 'sent', sent_at: sentAt })
+      .eq('id', replyRecord.id)
+      .select('id, contact_message_id, recipient_email, response, status, sent_at, created_at')
+      .single()
+    if (updateError) throw updateError
+
+    res.json({
+      success: true,
+      message: 'Reply emailed successfully.',
+      data: { reply: sentReply },
+    })
   } catch (err) {
     next(err)
   }

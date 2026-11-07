@@ -159,14 +159,11 @@ export default function StepReview({
         </div>
       </ReviewSection>
 
-      {disabled ? (
+      {disabled && profile.status === 'pending_approval' ? (
         <div className="submit-block">
-          <p>
-            {profile.status === 'pending_approval' && '⏳ Your profile is under review by the admin.'}
-            {profile.status === 'approved' && '✅ Your profile is approved.'}
-          </p>
+          <p>⏳ Your profile is under review by the admin.</p>
         </div>
-      ) : (
+      ) : disabled ? null : (
         <div className="submit-block">
           <p>
             Before submitting: make sure everything above is correct.

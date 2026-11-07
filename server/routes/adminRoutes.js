@@ -14,6 +14,7 @@ import {
   listConnections,
   listContactMessages,
   setContactMessageHandled,
+  replyToContactMessage,
 } from '../controllers/adminController.js'
 import upload from '../middleware/uploadMiddleware.js'
 import {
@@ -48,5 +49,6 @@ router.get('/connections', listConnections)
 // Stage 5 — contact messages from the public Contact Us form
 router.get('/messages', listContactMessages)
 router.patch('/messages/:id/handled', setContactMessageHandled)
+router.post('/messages/:id/reply', replyToContactMessage)
 
 export default router
