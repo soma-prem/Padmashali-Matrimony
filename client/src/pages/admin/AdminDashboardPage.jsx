@@ -1,32 +1,7 @@
-import { useEffect, useState } from 'react'
-import { api } from '../../api/api.js'
+import { useAdminStats } from '../../context/AdminStatsContext.jsx'
 
 export default function AdminDashboardPage() {
-  const [stats, setStats] = useState(null)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    let cancelled = false
-    const load = async () => {
-      setError('')
-      try {
-        const data = await api('/admin/stats')
-        if (!cancelled) setStats(data.data)
-      } catch (err) {
-        if (!cancelled) setError(err.message)
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-    const reloadAfterVisit = () => load()
-    window.addEventListener('mb-visitor-recorded', reloadAfterVisit)
-    load()
-    return () => {
-      cancelled = true
-      window.removeEventListener('mb-visitor-recorded', reloadAfterVisit)
-    }
-  }, [])
+  const { stats, error, loading } = useAdminStats()
 
   return (
     <div>

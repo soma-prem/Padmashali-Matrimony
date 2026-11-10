@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { useEffect } from 'react'
 import { AuthProvider } from './context/AuthContext.jsx'
+import { AdminStatsProvider } from './context/AdminStatsContext.jsx'
 import { api } from './api/api.js'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import Navbar from './components/Navbar.jsx'
@@ -40,7 +41,6 @@ function VisitorTracker() {
     }
 
     api('/visitors', { method: 'POST', body: { visitorId } })
-      .then(() => window.dispatchEvent(new Event('mb-visitor-recorded')))
       .catch((error) => console.error('Could not record unique visitor:', error))
   }, [])
 
@@ -51,11 +51,12 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <div className="app-shell">
-          <VisitorTracker />
-          <Navbar />
-          <div className="app-workspace">
-            <main className="app-main">
+        <AdminStatsProvider>
+          <div className="app-shell">
+            <VisitorTracker />
+            <Navbar />
+            <div className="app-workspace">
+              <main className="app-main">
               <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/register" element={<Register />} />
@@ -155,10 +156,11 @@ export default function App() {
 
               <Route path="*" element={<NotFound />} />
               </Routes>
-            </main>
+              </main>
+            </div>
+            <Toaster />
           </div>
-          <Toaster />
-        </div>
+        </AdminStatsProvider>
       </AuthProvider>
     </BrowserRouter>
   )

@@ -142,6 +142,7 @@
   gap: 10px;
   overflow-x: auto;
   padding: 4px 0 10px;
+  margin: 0 0 14px;
 }
 
 .detail-gallery img {
@@ -156,14 +157,14 @@
 .detail-hero {
   display: flex;
   gap: 14px;
-  align-items: flex-start;
+  align-items: center;
   flex-wrap: wrap;
-  margin-bottom: 6px;
+  margin-bottom: 14px;
 }
 
 .detail-avatar {
-  width: 88px;
-  height: 110px;
+  width: 150px;
+  height: 190px;
   border-radius: 10px;
   object-fit: cover;
   border: 2px solid var(--accent);
@@ -172,13 +173,45 @@
 
 .detail-headline {
   flex: 1;
-  min-width: 200px;
+  min-width: 240px;
+  text-align: left;
 }
 
 .detail-name {
   margin: 0;
   font-size: 24px;
   color: var(--text-h);
+}
+
+.detail-kundli {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.detail-kundli h5 {
+  margin: 0;
+  color: var(--text-h);
+  font-size: 13px;
+}
+
+.detail-kundli a {
+  display: block;
+  max-width: 100%;
+}
+
+.detail-kundli img {
+  display: block;
+  width: min(100%, 380px);
+  max-height: 420px;
+  object-fit: contain;
+  object-position: left top;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #fff;
 }
 
 .detail-sub {
@@ -357,6 +390,11 @@
 
   .detail-headline {
     min-width: 0;
+  }
+
+  .detail-avatar {
+    width: 112px;
+    height: 142px;
   }
 
   .conn-card {

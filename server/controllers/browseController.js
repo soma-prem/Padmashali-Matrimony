@@ -65,12 +65,29 @@ export async function listBrowse(req, res, next) {
 
     const { bornBefore, bornAfter } = dobBounds(minAge, maxAge)
 
-    // nakshatra/gotra live in horoscope_details -> pre-filter the user ids
+    const [activeUsersRes, verifiedPaymentsRes] = await Promise.all([
+      supabase.from('users').select('id').eq('is_active', true),
+      supabase.from('membership_payments').select('user_id').eq('status', 'verified'),
+    ])
+    if (activeUsersRes.error) throw activeUsersRes.error
+    if (verifiedPaymentsRes.error) throw verifiedPaymentsRes.error
+
+    const verifiedUserIds = new Set((verifiedPaymentsRes.data || []).map((payment) => payment.user_id))
+    const eligibleUserIds = (activeUsersRes.data || [])
+      .map((user) => user.id)
+      .filter((userId) => verifiedUserIds.has(userId))
+    if (eligibleUserIds.length === 0) {
+      return res.json({
+        success: true,
+        data: { items: [], page, limit: PAGE_LIMIT, total: 0, totalPages: 1 },
+      })
+    }
+
+    // Nakshatra lives in horoscope_details; Gotra is a profiles column.
     let allowedIds = null // null = no constraint
-    if (nakshatra || gotra) {
+    if (nakshatra) {
       let q = supabase.from('horoscope_details').select('user_id')
-      if (nakshatra) q = q.eq('nakshatra', nakshatra)
-      if (gotra) q = q.ilike('gotra', `%${gotra}%`)
+      q = q.eq('nakshatra', nakshatra)
       const { data, error } = await q
       if (error) throw error
       allowedIds = data.map((r) => r.user_id)
@@ -82,16 +99,18 @@ export async function listBrowse(req, res, next) {
       }
     }
 
-    const buildQuery = () => {
+    const buildQuery = (countOnly = false) => {
       let query = supabase
         .from('profiles')
-        .select('id, user_id, name, gender, date_of_birth, height_cm, city, state, highest_qualification, occupation, marital_status, created_at, users!inner ( is_active )')
+        .select(countOnly ? 'id' : 'id, user_id, name, gender, date_of_birth, height_cm, city, state, highest_qualification, occupation, marital_status, gotra, created_at',
+          countOnly ? { count: 'exact', head: true } : undefined)
         .eq('profile_status', 'approved')
         .eq('payment_required', false)
         .eq('gender', oppositeGender)
         .neq('user_id', req.user.id)
-        .eq('users.is_active', true)
+        .in('user_id', eligibleUserIds)
       if (allowedIds) query = query.in('user_id', allowedIds)
+      if (gotra) query = query.ilike('gotra', `%${gotra}%`)
       if (maritalStatus) query = query.eq('marital_status', maritalStatus)
       if (education) query = query.ilike('highest_qualification', `%${education}%`)
       if (city) query = query.ilike('city', `%${city}%`)
@@ -105,15 +124,14 @@ export async function listBrowse(req, res, next) {
       .range((page - 1) * PAGE_LIMIT, page * PAGE_LIMIT - 1)
     if (error) throw error
 
-    const { count: total, error: countError } = await buildQuery()
-      .select('id', { count: 'exact', head: true })
+    const { count: total, error: countError } = await buildQuery(true)
     if (countError) throw countError
 
     const userIds = rows.map((r) => r.user_id)
 
     const [horoRes, photoRes, relMap] = await Promise.all([
       userIds.length
-        ? supabase.from('horoscope_details').select('user_id, nakshatra, gotra').in('user_id', userIds)
+        ? supabase.from('horoscope_details').select('user_id, nakshatra').in('user_id', userIds)
         : Promise.resolve({ data: [], error: null }),
       userIds.length
         ? supabase.from('profile_photos').select('user_id, url').in('user_id', userIds).eq('is_main', true)
@@ -139,7 +157,7 @@ export async function listBrowse(req, res, next) {
       occupation: r.occupation,
       maritalStatus: r.marital_status,
       nakshatra: horoByUser[r.user_id]?.nakshatra ?? null,
-      gotra: horoByUser[r.user_id]?.gotra ?? null,
+      gotra: r.gotra ?? null,
       profilePhotoUrl: photoByUser[r.user_id] ?? null,
       relationship: relMap[r.user_id] ?? 'none',
     }))
@@ -179,6 +197,26 @@ export async function getBrowseDetail(req, res, next) {
       .maybeSingle()
     if (findError) throw findError
     assertBrowseTarget(targetProfile, viewer)
+
+    const [paymentRes, userRes] = await Promise.all([
+      supabase
+        .from('membership_payments')
+        .select('id')
+        .eq('user_id', targetProfile.user_id)
+        .eq('status', 'verified')
+        .maybeSingle(),
+      supabase
+        .from('users')
+        .select('id')
+        .eq('id', targetProfile.user_id)
+        .eq('is_active', true)
+        .maybeSingle(),
+    ])
+    if (paymentRes.error) throw paymentRes.error
+    if (userRes.error) throw userRes.error
+    if (!paymentRes.data || !userRes.data) {
+      throw new AppError('This profile is not available.', 404)
+    }
 
     const snapshot = await loadProfileSnapshot(targetProfile.user_id, { createIfMissing: false })
 

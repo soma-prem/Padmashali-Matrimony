@@ -11,7 +11,7 @@ const STEPS = [
   {
     no: '02',
     title: 'Admin verification',
-    text: 'Submit your profile once it is at least 80% complete and has a photo. Our team reviews it and lets you know the result.',
+    text: 'Submit your profile once it is at least 70% complete and has a photo. Our team reviews it and lets you know the result.',
     note: 'Updates are available through in-website notifications.',
   },
   {

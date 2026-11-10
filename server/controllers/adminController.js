@@ -58,7 +58,7 @@ export async function getStats(req, res, next) {
 // ------------------------------------------------------------------
 const ADMIN_STATUSES = VALID_PROFILE_STATUSES
 const ADMIN_GENDERS = ['male', 'female']
-const PAGE_LIMIT = 8
+const PAGE_LIMIT = 10
 
 export async function listProfiles(req, res, next) {
   try {
@@ -407,15 +407,16 @@ export async function listRequests(req, res, next) {
     const status = ['pending', 'approved', 'rejected', 'all'].includes(req.query.status)
       ? req.query.status
       : 'pending'
+    const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1)
 
     let query = supabase
       .from('interest_requests')
-      .select('id, sender_id, receiver_id, status, created_at')
+      .select('id, sender_id, receiver_id, status, created_at', { count: 'exact' })
       .order('created_at', { ascending: false })
-      .limit(100)
     if (status !== 'all') query = query.eq('status', status)
 
-    const { data: requests, error } = await query
+    const { data: requests, error, count } = await query
+      .range((page - 1) * PAGE_LIMIT, page * PAGE_LIMIT - 1)
     if (error) throw error
 
     const summaries = await userSummaries(requests.flatMap((r) => [r.sender_id, r.receiver_id]))
@@ -430,7 +431,17 @@ export async function listRequests(req, res, next) {
       }))
       .filter((r) => r.sender && r.receiver)
 
-    res.json({ success: true, data: { items, filter: status } })
+    res.json({
+      success: true,
+      data: {
+        items,
+        filter: status,
+        page,
+        limit: PAGE_LIMIT,
+        total: count ?? 0,
+        totalPages: Math.max(1, Math.ceil((count ?? 0) / PAGE_LIMIT)),
+      },
+    })
   } catch (err) {
     next(err)
   }
@@ -603,11 +614,12 @@ export async function rejectRequest(req, res, next) {
 // ---------------------------------------------------------------------------
 export async function listConnections(req, res, next) {
   try {
-    const { data: connections, error } = await supabase
+    const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1)
+    const { data: connections, error, count } = await supabase
       .from('connections')
-      .select('id, user_a_id, user_b_id, created_at')
+      .select('id, user_a_id, user_b_id, created_at', { count: 'exact' })
       .order('created_at', { ascending: false })
-      .limit(100)
+      .range((page - 1) * PAGE_LIMIT, page * PAGE_LIMIT - 1)
     if (error) throw error
 
     const summaries = await userSummaries(
@@ -621,7 +633,16 @@ export async function listConnections(req, res, next) {
       userB: summaries[c.user_b_id] ?? null,
     }))
 
-    res.json({ success: true, data: { items } })
+    res.json({
+      success: true,
+      data: {
+        items,
+        page,
+        limit: PAGE_LIMIT,
+        total: count ?? 0,
+        totalPages: Math.max(1, Math.ceil((count ?? 0) / PAGE_LIMIT)),
+      },
+    })
   } catch (err) {
     next(err)
   }

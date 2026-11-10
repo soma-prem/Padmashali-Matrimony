@@ -76,6 +76,12 @@ export default function BrowseDetail() {
 
   const rel = profile.relationship
   const photos = profile.photos || []
+  const mainPhotoUrl = photos[0]?.url
+  const galleryPhotos = photos.filter((photo, index, all) =>
+    photo.url &&
+    photo.url !== mainPhotoUrl &&
+    all.findIndex((candidate) => candidate.url === photo.url) === index
+  )
   const basic = profile.basic ?? {}
   const community = profile.community ?? {}
   const edu = profile.educationCareer ?? {}
@@ -97,8 +103,8 @@ export default function BrowseDetail() {
 
         {/* hero */}
         <div className="detail-hero">
-          {photos[0]?.url ? (
-            <img className="detail-avatar" src={photos[0].url} alt="" />
+          {mainPhotoUrl ? (
+            <img className="detail-avatar" src={mainPhotoUrl} alt={`${basic.name || 'Profile'} main photo`} />
           ) : (
             <div className="detail-avatar" style={{ display: 'grid', placeItems: 'center', fontSize: 34, fontWeight: 800, color: 'var(--primary-deep)' }}>
               {(basic.name || '?').slice(0, 1)}
@@ -121,9 +127,9 @@ export default function BrowseDetail() {
         </div>
 
         {/* photo gallery */}
-        {photos.length > 1 && (
+        {galleryPhotos.length > 0 && (
           <div className="detail-gallery">
-            {photos.map((p) => <img key={p.id} src={p.url} alt="Profile photo" />)}
+            {galleryPhotos.map((p) => <img key={p.id} src={p.url} alt={`${basic.name || 'Profile'} photo`} />)}
           </div>
         )}
 
@@ -201,10 +207,11 @@ export default function BrowseDetail() {
             ['Manglik', horo.manglik],
           ]}>
             {horo.kundliImageUrl && (
-              <div style={{ marginTop: 8 }}>
-                <span className="k">Kundli image</span>
-                <img src={horo.kundliImageUrl} alt="Kundli"
-                  style={{ maxWidth: '100%', maxHeight: 260, objectFit: 'contain', border: '1px solid var(--border)', borderRadius: 8, marginTop: 6 }} />
+              <div className="detail-kundli">
+                <h5>Kundli image</h5>
+                <a href={horo.kundliImageUrl} target="_blank" rel="noreferrer">
+                  <img src={horo.kundliImageUrl} alt={`${basic.name || 'Profile'} Kundli chart`} loading="lazy" />
+                </a>
               </div>
             )}
           </Group>

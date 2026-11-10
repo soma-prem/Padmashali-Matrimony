@@ -131,18 +131,24 @@ export default function PaymentDetails() {
             {canSubmit && (
               <form className="payment-submit-form" onSubmit={submit}>
                 <h2>{payment.status === 'rejected' ? 'Resubmit payment details' : 'Submit payment details'}</h2>
-                <label className="form-label" htmlFor="payment-utr">UTR number</label>
-                <input id="payment-utr" className="form-input" required minLength={6} maxLength={50}
-                  pattern="[A-Za-z0-9][A-Za-z0-9/-]{5,49}"
-                  title="Use 6–50 letters, numbers, / or -."
-                  value={utrNumber} onChange={(event) => setUtrNumber(event.target.value)} />
-                <label className="form-label" htmlFor="payment-screenshot">Payment screenshot</label>
-                <input key={inputKey} id="payment-screenshot" className="form-input" type="file"
-                  accept="image/jpeg,image/png,image/webp" required
-                  onChange={(event) => setScreenshot(event.target.files?.[0] ?? null)} />
-                <button type="submit" className="btn btn-primary" disabled={submitting} style={{ marginTop: 16 }}>
-                  {submitting ? 'Submitting…' : 'Send payment for verification'}
-                </button>
+                <div className="payment-form-row">
+                  <label htmlFor="payment-utr">UTR number</label>
+                  <input id="payment-utr" className="form-input" required minLength={6} maxLength={50}
+                    pattern="[A-Za-z0-9][A-Za-z0-9/-]{5,49}"
+                    title="Use 6–50 letters, numbers, / or -."
+                    value={utrNumber} onChange={(event) => setUtrNumber(event.target.value)} />
+                </div>
+                <div className="payment-form-row">
+                  <label htmlFor="payment-screenshot">Payment screenshot</label>
+                  <input key={inputKey} id="payment-screenshot" className="form-input" type="file"
+                    accept="image/jpeg,image/png,image/webp" required
+                    onChange={(event) => setScreenshot(event.target.files?.[0] ?? null)} />
+                </div>
+                <div className="payment-form-actions">
+                  <button type="submit" className="btn btn-primary" disabled={submitting}>
+                    {submitting ? 'Submitting…' : 'Send payment for verification'}
+                  </button>
+                </div>
               </form>
             )}
           </>

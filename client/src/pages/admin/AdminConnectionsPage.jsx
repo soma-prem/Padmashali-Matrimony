@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../../api/api.js'
 import PhotoPreview from '../../components/admin/PhotoPreview.jsx'
+import AdminPagination from '../../components/admin/AdminPagination.jsx'
 
 function fmtDate(v) {
   if (!v) return '—'
@@ -31,15 +32,20 @@ function Party({ party }) {
 
 export default function AdminConnectionsPage() {
   const [items, setItems] = useState(null)
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
     let cancelled = false
     const load = async () => {
+      setLoading(true)
+      setError('')
       try {
-        const data = await api('/admin/connections')
+        const data = await api(`/admin/connections?page=${page}`)
         if (!cancelled) setItems(data.data.items)
+        if (!cancelled) setTotalPages(data.data.totalPages)
       } catch (err) {
         if (!cancelled) setError(err.message)
       } finally {
@@ -48,7 +54,7 @@ export default function AdminConnectionsPage() {
     }
     load()
     return () => { cancelled = true }
-  }, [])
+  }, [page])
 
   return (
     <div>
@@ -64,7 +70,7 @@ export default function AdminConnectionsPage() {
       )}
 
       <div className="admin-list">
-        {(items || []).map((c) => (
+        {(!loading && !error ? items || [] : []).map((c) => (
           <div className="request-row" key={c.id} style={{ flexWrap: 'wrap' }}>
             <div className="request-row-main">
               <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -79,6 +85,9 @@ export default function AdminConnectionsPage() {
           </div>
         ))}
       </div>
+      {!loading && !error && items?.length > 0 && (
+        <AdminPagination page={page} totalPages={totalPages} onPageChange={setPage} />
+      )}
     </div>
   )
 }

@@ -196,11 +196,63 @@ export async function sendPaymentRequest(req, res, next) {
 export async function listPaymentSubmissions(req, res, next) {
   try {
     const status = req.query.status === 'verified' ? 'verified' : 'submitted'
-    const { data: rows, error } = await supabase
+    const search = String(req.query.search || '').trim().slice(0, 80).replace(/[,%()]/g, '')
+    const dateValue = (value) => {
+      if (!value) return null
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        throw new AppError('Dates must use YYYY-MM-DD format.', 400)
+      }
+      const date = new Date(`${value}T00:00:00.000Z`)
+      if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) {
+        throw new AppError('Enter a valid date.', 400)
+      }
+      return value
+    }
+    const fromDate = dateValue(req.query.from)
+    const toDate = dateValue(req.query.to)
+    if (fromDate && toDate && fromDate > toDate) {
+      throw new AppError('The start date must be on or before the end date.', 400)
+    }
+
+    let matchingUserIds = null
+    if (search) {
+      const pattern = `%${search}%`
+      const [userNameRes, userEmailRes, profilesRes, paymentSearchRes] = await Promise.all([
+        supabase.from('users').select('id').ilike('name', pattern),
+        supabase.from('users').select('id').ilike('email', pattern),
+        supabase.from('profiles').select('user_id').ilike('name', pattern),
+        supabase.from('membership_payments').select('user_id')
+          .eq('status', status).ilike('utr_number', pattern),
+      ])
+      if (userNameRes.error) throw userNameRes.error
+      if (userEmailRes.error) throw userEmailRes.error
+      if (profilesRes.error) throw profilesRes.error
+      if (paymentSearchRes.error) throw paymentSearchRes.error
+      matchingUserIds = [...new Set([
+        ...(userNameRes.data || []).map((user) => user.id),
+        ...(userEmailRes.data || []).map((user) => user.id),
+        ...(profilesRes.data || []).map((profile) => profile.user_id),
+        ...(paymentSearchRes.data || []).map((payment) => payment.user_id),
+      ])]
+      if (matchingUserIds.length === 0) {
+        return res.json({ success: true, data: { items: [], status } })
+      }
+    }
+
+    const dateColumn = status === 'verified' ? 'reviewed_at' : 'submitted_at'
+    let query = supabase
       .from('membership_payments')
       .select('id, user_id, amount, qr_image_url, status, request_sent_at, utr_number, payment_screenshot_url, submitted_at, reviewed_at')
       .eq('status', status)
-      .order(status === 'verified' ? 'reviewed_at' : 'submitted_at', { ascending: false })
+      .order(dateColumn, { ascending: false })
+    if (matchingUserIds) query = query.in('user_id', matchingUserIds)
+    if (fromDate) query = query.gte(dateColumn, `${fromDate}T00:00:00.000Z`)
+    if (toDate) {
+      const toExclusive = new Date(`${toDate}T00:00:00.000Z`)
+      toExclusive.setUTCDate(toExclusive.getUTCDate() + 1)
+      query = query.lt(dateColumn, toExclusive.toISOString())
+    }
+    const { data: rows, error } = await query
     if (error) throw error
 
     const userIds = rows.map((row) => row.user_id)

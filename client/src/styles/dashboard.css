@@ -1,6 +1,7 @@
 .dashboard-page {
   display: flex;
   justify-content: center;
+  width: 100%;
   padding: 30px 0;
 }
 
@@ -16,7 +17,13 @@
 }
 
 .requests-page-card {
-  max-width: 1000px;
+  max-width: 1100px;
+}
+
+.payment-page .dashboard-card,
+.requests-page-card,
+.dashboard-card.wide {
+  max-width: 1100px;
 }
 
 .dashboard-title {

@@ -3,6 +3,7 @@ import { api } from '../../api/api.js'
 import { formatSiblingDetails } from '../../utils/family.js'
 import ConfirmDialog from '../../components/admin/ConfirmDialog.jsx'
 import PhotoPreview from '../../components/admin/PhotoPreview.jsx'
+import AdminPagination from '../../components/admin/AdminPagination.jsx'
 
 const TABS = [
   { value: 'pending', label: 'Pending' },
@@ -134,6 +135,8 @@ function ProfilePane({ role, profile, account }) {
 export default function AdminRequestsPage() {
   const [tab, setTab] = useState('pending')
   const [items, setItems] = useState(null)
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(true)
   const [listError, setListError] = useState('')
 
@@ -152,8 +155,9 @@ export default function AdminRequestsPage() {
     setLoading(true)
     setListError('')
     try {
-      const data = await api(`/admin/requests?status=${tab}`)
+      const data = await api(`/admin/requests?status=${tab}&page=${page}`)
       setItems(data.data.items)
+      setTotalPages(data.data.totalPages)
     } catch (err) {
       setListError(err.message)
     } finally {
@@ -161,7 +165,7 @@ export default function AdminRequestsPage() {
     }
   }
 
-  useEffect(() => { load() }, [tab]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load() }, [tab, page]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const openDetail = async (id, { keepMessage = false } = {}) => {
     setOpenId(id)
@@ -216,7 +220,7 @@ export default function AdminRequestsPage() {
         {TABS.map((t) => (
           <button key={t.value} type="button"
             className={`btn btn-sm ${tab === t.value ? 'btn-primary' : 'btn-outline'}`}
-            onClick={() => { setTab(t.value); setOpenId(null); setDetail(null) }}>
+            onClick={() => { setTab(t.value); setPage(1); setOpenId(null); setDetail(null) }}>
             {t.label}
           </button>
         ))}
@@ -253,6 +257,9 @@ export default function AdminRequestsPage() {
             </div>
           ))}
         </div>
+      )}
+      {!loading && !openId && items?.length > 0 && (
+        <AdminPagination page={page} totalPages={totalPages} onPageChange={setPage} />
       )}
 
       {/* side-by-side detail */}

@@ -96,4 +96,4 @@ export const PREF_MARITAL_OPTIONS = [
   { value: 'separated', label: 'Separated' },
 ]
 
-export const SUBMIT_MIN_PERCENT = 80
+export const SUBMIT_MIN_PERCENT = 70

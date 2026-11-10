@@ -4,7 +4,7 @@ import { SECTION_TARGETS, validateSection } from '../utils/profileValidation.js'
 import { loadProfileSnapshot } from '../utils/profileSnapshot.js'
 import { uploadImage, deleteImage } from '../utils/cloudinaryImage.js'
 
-const MIN_SUBMIT_PERCENT = 80
+const MIN_SUBMIT_PERCENT = 70
 const MIN_PHOTOS_TO_SUBMIT = 1
 const MAX_PHOTOS = 6
 
@@ -331,7 +331,7 @@ export async function uploadKundli(req, res, next) {
 
 // ------------------------------------------------------------------
 // POST /api/profile/submit — draft/rejected -> pending_approval
-// Requires: completion >= 80% and at least 1 photo.
+// Requires: completion >= 70% and at least 1 photo.
 // ------------------------------------------------------------------
 export async function submitProfile(req, res, next) {
   try {

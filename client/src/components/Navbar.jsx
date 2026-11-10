@@ -3,6 +3,7 @@ import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { api, toast } from '../api/api.js'
 import NotificationBell from './NotificationBell.jsx'
+import { useAdminStats } from '../context/AdminStatsContext.jsx'
 
 const PUBLIC_LINKS = [
   { to: '/', label: 'Home', icon: '⌂', end: true },
@@ -32,8 +33,8 @@ export default function Navbar() {
   const navigate = useNavigate()
   const location = useLocation()
   const [open, setOpen] = useState(false)
-  const [adminCounts, setAdminCounts] = useState(null)
   const [openMessagesCount, setOpenMessagesCount] = useState(null)
+  const { stats: adminCounts } = useAdminStats()
   const [profileApproved, setProfileApproved] = useState(false)
   const [accessChecked, setAccessChecked] = useState(false)
 
@@ -70,19 +71,11 @@ export default function Navbar() {
 
   useEffect(() => {
     if (!isAdmin) {
-      setAdminCounts(null)
       setOpenMessagesCount(null)
       return undefined
     }
 
     let cancelled = false
-    api('/admin/stats')
-      .then((response) => {
-        if (!cancelled) setAdminCounts(response.data)
-      })
-      .catch((error) => {
-        if (!cancelled) toast.error(`Could not load sidebar counts: ${error.message}`)
-      })
     api('/admin/messages?filter=open')
       .then((response) => {
         if (!cancelled) setOpenMessagesCount(response.data.count)
@@ -92,7 +85,7 @@ export default function Navbar() {
       })
 
     return () => { cancelled = true }
-  }, [isAdmin, location.pathname, location.search])
+  }, [isAdmin, user?.id])
 
   const handleLogout = () => {
     logout()

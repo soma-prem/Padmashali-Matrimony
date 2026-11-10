@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../../api/api.js'
 import ConfirmDialog from '../../components/admin/ConfirmDialog.jsx'
 import PhotoPreview from '../../components/admin/PhotoPreview.jsx'
+import AdminPagination from '../../components/admin/AdminPagination.jsx'
 
 const PROFILE_SECTIONS = [
   { status: 'pending_approval', title: 'Pending profiles' },
@@ -210,19 +211,11 @@ export default function AdminProfilesPage() {
                   ))}
                 </div>
 
-                {totalPages > 1 && (
-                  <div className="pagination">
-                    <button type="button" className="btn btn-outline btn-sm" disabled={page <= 1}
-                      onClick={() => setSectionPage(section.status, page - 1)}>
-                      ← Prev
-                    </button>
-                    <span>Page {page} of {totalPages}</span>
-                    <button type="button" className="btn btn-outline btn-sm" disabled={page >= totalPages}
-                      onClick={() => setSectionPage(section.status, page + 1)}>
-                      Next →
-                    </button>
-                  </div>
-                )}
+                <AdminPagination
+                  page={page}
+                  totalPages={totalPages}
+                  onPageChange={(nextPage) => setSectionPage(section.status, nextPage)}
+                />
               </>
             )}
           </section>

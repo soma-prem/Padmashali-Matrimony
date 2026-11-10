@@ -57,6 +57,102 @@
 
 .admin-payment-card {
   width: 100%;
+  max-width: none;
+  padding: 18px;
+  color: var(--text-h);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  text-align: left;
+}
+
+.admin-payment-summary {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) auto auto;
+  gap: 16px;
+  align-items: center;
+}
+
+.admin-payment-summary-main {
+  min-width: 0;
+}
+
+.admin-payment-summary-main h2 {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 17px;
+}
+
+.admin-payment-summary-main p,
+.admin-payment-heading p {
+  margin: 4px 0 0;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.admin-payment-summary-data {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+
+.admin-payment-filters {
+  align-items: end;
+}
+
+.admin-payment-date-filter {
+  display: grid;
+  gap: 4px;
+  min-width: 150px;
+  color: var(--text-h);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.admin-payment-date-filter .form-input {
+  width: 100%;
+}
+
+.admin-payment-details {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.admin-payment-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+.admin-payment-grid .admin-payment-card {
+  margin: 0;
+}
+
+@media (max-width: 760px) {
+  .admin-payment-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-payment-summary {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .admin-payment-summary-data {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .admin-payment-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-payment-date-filter {
+    min-width: 0;
+  }
 }
 
 .admin-payment-heading {

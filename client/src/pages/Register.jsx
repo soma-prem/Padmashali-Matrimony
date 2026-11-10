@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
+import PasswordInput from '../components/PasswordInput.jsx'
 
 const STEPS = { EMAIL: 'EMAIL', OTP: 'OTP', DETAILS: 'DETAILS' }
 const OTP_LENGTH = 6
@@ -313,10 +314,8 @@ export default function Register() {
             <label className="form-label" htmlFor="reg-password">
               Password
             </label>
-            <input
+            <PasswordInput
               id="reg-password"
-              type="password"
-              className="form-input"
               placeholder="At least 8 characters"
               value={form.password}
               onChange={updateForm('password')}
@@ -328,10 +327,8 @@ export default function Register() {
             <label className="form-label" htmlFor="reg-confirm">
               Confirm password
             </label>
-            <input
+            <PasswordInput
               id="reg-confirm"
-              type="password"
-              className="form-input"
               placeholder="Re-enter password"
               value={form.confirmPassword}
               onChange={updateForm('confirmPassword')}
