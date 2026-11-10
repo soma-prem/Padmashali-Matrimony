@@ -26,7 +26,7 @@ app.use(
     // 517x port, so "Port 5173 is in use, trying another one..." never breaks CORS.
     origin: (origin, callback) => {
       const allowed = process.env.CLIENT_URL
-        ? process.env.CLIENT_URL.split(',').map((u) => u.trim())
+        ? process.env.CLIENT_URL.split(',').map((u) => u.trim().replace(/\/+$/, ''))
         : ['http://localhost:5173']
 
       const isDevLocal =
