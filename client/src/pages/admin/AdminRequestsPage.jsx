@@ -214,14 +214,22 @@ export default function AdminRequestsPage() {
 
   return (
     <div>
-      <h1 className="dashboard-title" style={{ marginBottom: 12 }}>Interest Requests</h1>
+      <div className="admin-section-header">
+        <h1>Interest Requests</h1>
+        <p>Manage and review all incoming interest requests.</p>
+      </div>
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+      <div className="admin-tab-bar" role="tablist" aria-label="Interest request tabs">
         {TABS.map((t) => (
-          <button key={t.value} type="button"
-            className={`btn btn-sm ${tab === t.value ? 'btn-primary' : 'btn-outline'}`}
-            onClick={() => { setTab(t.value); setPage(1); setOpenId(null); setDetail(null) }}>
-            {t.label}
+          <button
+            key={t.value}
+            type="button"
+            role="tab"
+            aria-selected={tab === t.value}
+            className={`admin-tab ${tab === t.value ? 'admin-tab--active' : ''}`}
+            onClick={() => { setTab(t.value); setPage(1); setOpenId(null); setDetail(null) }}
+          >
+            <span>{t.label}</span>
           </button>
         ))}
       </div>

@@ -2,7 +2,7 @@
  * ⚠️ DEMO DATA ONLY — for TESTING, never for a live website. ⚠️
  *
  * Creates 4 approved demo users (2 grooms, 2 brides) with obviously fake
- * sample data so browsing/requests can be tested immediately.
+ * payment submissions so an admin can verify payments and unlock browsing.
  * - Emails end in @demo.example (fake domain)
  * - All passwords are: Demo@1234
  * - Re-running the script REPLACES the demo users (delete + recreate)
@@ -20,6 +20,7 @@ dotenv.config()
 import { supabase } from '../config/supabase.js'
 
 const DEMO_PASSWORD = 'Demo@1234'
+const DEMO_PAYMENT_AMOUNT = 1
 const DEMO_EMAILS = [
   'ravi.kumar@demo.example',
   'suresh.rao@demo.example',
@@ -295,10 +296,29 @@ async function seedDemo() {
         user_id: user.id,
         ...demo.profile,
         profile_status: 'approved',
+        payment_required: true,
         completion_percent: 100,
       })
     if (profileError) {
       console.error(`✗ profile for ${demo.user.email}: ${profileError.message}`)
+      process.exit(1)
+    }
+
+    const now = new Date().toISOString()
+    const { error: paymentError } = await supabase
+      .from('membership_payments')
+      .insert({
+        user_id: user.id,
+        amount: DEMO_PAYMENT_AMOUNT,
+        qr_image_url: photoUrl('demo-payment-qr'),
+        status: 'submitted',
+        utr_number: `DEMO-${user.id.slice(0, 8)}`,
+        payment_screenshot_url: photoUrl(`demo-payment-${user.id}`),
+        request_sent_at: now,
+        submitted_at: now,
+      })
+    if (paymentError) {
+      console.error(`✗ demo payment submission for ${demo.user.email}: ${paymentError.message}`)
       process.exit(1)
     }
 
@@ -322,7 +342,7 @@ async function seedDemo() {
       })
     if (photoError) console.warn(`! photo for ${user.email}: ${photoError.message}`)
 
-    console.log(`✓ ${demo.user.email} — password: ${DEMO_PASSWORD}`)
+    console.log(`✓ ${demo.user.email} — password: ${DEMO_PASSWORD} — profile approved, demo payment awaiting review`)
   }
 
   console.log('\n⚠️  Remember: delete these demo users before going live (README).')

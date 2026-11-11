@@ -1,3 +1,151 @@
+.admin-section-header {
+  margin-bottom: 18px;
+}
+
+.admin-section-header h1 {
+  margin: 0;
+  font-size: clamp(2rem, 2.5vw, 3rem);
+  line-height: 1.12;
+  color: var(--text-h);
+}
+
+.admin-section-header p {
+  margin: 10px 0 0;
+  color: #6d6662;
+  font-size: 1.02rem;
+}
+
+.admin-tab-bar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 18px;
+  padding-bottom: 0;
+}
+
+.admin-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 8px 12px 10px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #5c4d48;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: color 0.18s ease, background 0.18s ease;
+}
+
+.admin-tab:hover {
+  color: var(--primary-deep);
+}
+
+.admin-tab--active {
+  background: transparent;
+  color: var(--primary);
+}
+
+.admin-tab--active::after {
+  content: '';
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: -1px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--primary);
+}
+
+.admin-payment-filter-panel {
+  display: grid;
+  gap: 20px;
+  padding: 18px 0 0;
+}
+
+.admin-payment-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.admin-payment-search-icon {
+  position: absolute;
+  left: 16px;
+  color: #7b6964;
+  font-size: 20px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.admin-payment-search {
+  width: 100%;
+  min-height: 50px;
+  padding-left: 42px;
+  border-radius: 12px;
+  border: 1px solid #d9d0c7;
+  background: #f7f5f2;
+  color: var(--text-h);
+  font-size: 1rem;
+}
+
+.admin-payment-search::placeholder {
+  color: #7a6c65;
+}
+
+.admin-payment-date-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.admin-payment-date-filter {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  color: #3d2f2d;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.admin-payment-date-filter .form-input {
+  width: 100%;
+  min-height: 46px;
+  border-radius: 12px;
+  border: 1px solid #d9d0c7;
+  background: #f7f5f2;
+}
+
+.admin-payment-actions-row {
+  display: flex;
+  justify-content: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.admin-payment-submit-btn {
+  min-width: 168px;
+  min-height: 44px;
+  border-radius: 10px;
+  font-size: 1rem;
+}
+
+.admin-payment-clear-btn {
+  min-height: 44px;
+  border-radius: 10px;
+  padding-left: 18px;
+  padding-right: 18px;
+  font-size: 1rem;
+}
+
 /* ===== Admin area ===== */
 .admin-photo-preview-trigger {
   display: inline-flex;
@@ -97,23 +245,6 @@
   align-items: center;
   flex-wrap: wrap;
   font-size: 13px;
-}
-
-.admin-payment-filters {
-  align-items: end;
-}
-
-.admin-payment-date-filter {
-  display: grid;
-  gap: 4px;
-  min-width: 150px;
-  color: var(--text-h);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.admin-payment-date-filter .form-input {
-  width: 100%;
 }
 
 .admin-payment-details {
@@ -383,6 +514,58 @@
 
 @media (min-width: 700px) {
   .admin-list-item { padding: 14px 18px; }
+}
+
+.admin-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.admin-profile-card {
+  min-width: 0;
+  min-height: 100%;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+  padding: 16px;
+}
+
+.admin-profile-card .admin-avatar {
+  width: 64px;
+  height: 64px;
+}
+
+.admin-profile-card .admin-item-main {
+  flex: 1 1 calc(100% - 78px);
+}
+
+.admin-profile-card .admin-item-meta {
+  gap: 6px 9px;
+  font-size: 12px;
+}
+
+.admin-profile-card .admin-item-actions {
+  width: 100%;
+  flex-direction: row;
+  margin-top: auto;
+  padding-top: 6px;
+}
+
+.admin-profile-card .admin-item-actions .btn {
+  flex: 1 1 0;
+}
+
+@media (max-width: 1000px) {
+  .admin-profile-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .admin-profile-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .admin-avatar {

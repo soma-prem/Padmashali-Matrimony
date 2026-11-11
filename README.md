@@ -161,8 +161,10 @@ cd server
 npm run seed:demo
 ```
 
-Creates 4 approved demo users (2 grooms, 2 brides) with obviously fake sample data —
-emails are all `*@demo.example`, every password is `Demo@1234`. Re-running replaces them.
+Creates 4 approved demo users (2 grooms, 2 brides) with obviously fake sample data and
+fake payment submissions awaiting admin review. Verify a demo payment in the admin panel
+to unlock that profile for browsing. Emails are all `*@demo.example`, every password is
+`Demo@1234`. Re-running replaces them.
 **See the "Before going live" checklist below — delete these before launch.**
 
 ---

@@ -6,10 +6,16 @@ import NotificationBell from './NotificationBell.jsx'
 import { useAdminStats } from '../context/AdminStatsContext.jsx'
 
 const PUBLIC_LINKS = [
-  { to: '/', label: 'Home', icon: '⌂', end: true },
-  { to: '/how-it-works', label: 'How it works', icon: '◇' },
-  { to: '/contact', label: 'Contact us', icon: '✉' },
+  { to: '/', label: 'Home', icon: 'home', end: true },
+  { to: '/how-it-works', label: 'How it works', icon: 'how-it-works' },
+  { to: '/contact', label: 'Contact us', icon: 'contact' },
 ]
+
+const PUBLIC_ICON_PATHS = {
+  home: <><path d="m3.5 10 8.5-7 8.5 7" /><path d="M5.5 9v11h13V9M9 20v-6h6v6" /></>,
+  'how-it-works': <path d="m12 3 9 9-9 9-9-9 9-9Z" />,
+  contact: <><rect x="3" y="5" width="18" height="14" rx="1.5" /><path d="m4 7 8 6 8-6" /></>,
+}
 
 const USER_LINKS = [
   { to: '/profile', label: 'My profile', icon: '♙' },
@@ -20,12 +26,12 @@ const USER_LINKS = [
 ]
 
 const ADMIN_LINKS = [
-  { to: '/admin', label: 'Dashboard', icon: '▦', end: true },
-  { to: '/admin/profiles', label: 'Profiles', icon: '♙', countKey: 'pendingProfiles' },
-  { to: '/admin/requests', label: 'Requests', icon: '↗', countKey: 'pendingRequests' },
-  { to: '/admin/connections', label: 'Connections', icon: '♧', countKey: 'totalConnections' },
-  { to: '/admin/messages', label: 'Contact messages', icon: '✉', countKey: 'openMessages' },
-  { to: '/admin/payments', label: 'Payments', icon: '₹', countKey: 'pendingPayments' },
+  { to: '/admin', label: 'Dashboard', icon: '/logos/dashboard.png', end: true },
+  { to: '/admin/profiles', label: 'Profiles', icon: '/logos/profile.jpg', countKey: 'pendingProfiles' },
+  { to: '/admin/requests', label: 'Requests', icon: '/logos/request.png', countKey: 'pendingRequests' },
+  { to: '/admin/connections', label: 'Connections', icon: '/logos/connection.jpg', countKey: 'totalConnections' },
+  { to: '/admin/messages', label: 'Contact messages', icon: '/logos/contact.png', countKey: 'openMessages' },
+  { to: '/admin/payments', label: 'Payments', icon: '/logos/payment.png', countKey: 'pendingPayments' },
 ]
 
 export default function Navbar() {
@@ -126,6 +132,13 @@ export default function Navbar() {
             const count = countKey === 'openMessages'
               ? openMessagesCount
               : adminCounts?.[countKey]
+            const isImageIcon = typeof icon === 'string' && /\.(png|jpe?g|svg|webp|gif)$/i.test(icon)
+            const iconMarkup = isImageIcon
+              ? <img src={icon} alt="" className="sidebar-link-icon sidebar-link-image" aria-hidden="true" />
+              : PUBLIC_ICON_PATHS[icon]
+                ? <svg className="sidebar-link-icon sidebar-link-svg" viewBox="0 0 24 24" aria-hidden="true">{PUBLIC_ICON_PATHS[icon]}</svg>
+              : <span className="sidebar-link-icon" aria-hidden="true">{icon}</span>
+
             if (disabled || pendingCheck) {
               return (
                 <span
@@ -134,7 +147,7 @@ export default function Navbar() {
                   title="Get your profile verified by admin"
                   aria-label={`${label} — get your profile verified by admin`}
                 >
-                  <span className="sidebar-link-icon" aria-hidden="true">{icon}</span>
+                  {iconMarkup}
                   <span>{label}</span>
                   <span className="nav-link-tooltip">Get your profile verified by admin</span>
                 </span>
@@ -150,7 +163,7 @@ export default function Navbar() {
                 aria-label={label}
                 onClick={close}
               >
-                <span className="sidebar-link-icon" aria-hidden="true">{icon}</span>
+                {iconMarkup}
                 <span>{label}</span>
                 {countKey && count !== null && count !== undefined && (
                   <span className="sidebar-count" aria-label={`${count} records`}>

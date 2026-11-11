@@ -136,6 +136,124 @@
   text-overflow: ellipsis;
 }
 
+.browse-detail-categories {
+  margin-top: 20px;
+}
+
+.browse-detail-tabs {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+  padding: 6px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+}
+
+.browse-detail-tab {
+  min-width: 0;
+  min-height: 40px;
+  padding: 8px 6px;
+  border: 0;
+  border-radius: 10px;
+  color: var(--text-h);
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.16s ease, background 0.16s ease;
+}
+
+.browse-detail-tab:hover {
+  color: var(--primary);
+  background: #f8f2e9;
+}
+
+.browse-detail-tab.is-active {
+  color: #fff;
+  background: var(--primary-deep);
+}
+
+.browse-detail-tab.is-active:hover {
+  color: #fff;
+  background: var(--primary);
+}
+
+.browse-detail-panel {
+  margin-top: 22px;
+  padding: 22px 24px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+}
+
+.browse-detail-panel[hidden] {
+  display: none;
+}
+
+.browse-detail-group {
+  padding: 0;
+  border: 0;
+}
+
+.browse-detail-group-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #eee9e5;
+}
+
+.browse-detail-group-heading h4 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.browse-detail-group-heading > span {
+  flex: 0 0 auto;
+  color: #8a7b78;
+  font-size: 12px;
+}
+
+.browse-detail-panel .review-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 24px;
+}
+
+.browse-detail-panel .review-list > div:not(.detail-kundli) {
+  min-width: 0;
+  min-height: 42px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px dashed #eee9e5;
+}
+
+.browse-detail-panel .review-list .k {
+  flex: 0 0 42%;
+}
+
+.browse-detail-panel .review-list .v {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.browse-detail-panel .review-list > .detail-kundli {
+  grid-column: 1 / -1;
+}
+
+.detail-gallery-section {
+  margin: 18px 0 14px;
+}
+
+.detail-gallery-title {
+  margin: 0 0 8px;
+  color: var(--text-h);
+  font-size: 16px;
+}
+
 /* ===== detail page ===== */
 .detail-gallery {
   display: flex;
@@ -228,6 +346,26 @@
   padding: 10px 14px;
   font-size: 13px;
   margin: 12px 0;
+}
+
+.detail-request-stage {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin: 12px 0;
+  padding: 8px 18px;
+  color: #bd777b;
+  background: #fff;
+  border: 1px solid #eadbd2;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.detail-request-stage > span:first-child {
+  font-size: 14px;
+  line-height: 1;
 }
 
 .detail-connect-box {
@@ -395,6 +533,34 @@
   .detail-avatar {
     width: 112px;
     height: 142px;
+  }
+
+  .browse-detail-tabs {
+    display: flex;
+    gap: 3px;
+    padding: 4px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+
+  .browse-detail-tab {
+    min-height: 42px;
+    flex: 0 0 auto;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .browse-detail-panel {
+    margin-top: 14px;
+    padding: 16px 14px;
+  }
+
+  .browse-detail-panel .review-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .browse-detail-group-heading {
+    align-items: flex-start;
   }
 
   .conn-card {

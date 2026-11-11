@@ -209,9 +209,31 @@
   line-height: 1;
 }
 
+.sidebar-link-image {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  border-radius: 4px;
+  filter: brightness(0.85) saturate(0.8);
+}
+
+.sidebar-link-svg {
+  width: 14px;
+  height: 14px;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .nav-link.active .sidebar-link-icon,
-.nav-link:hover .sidebar-link-icon {
+.nav-link:hover .sidebar-link-icon,
+.nav-link.active .sidebar-link-image,
+.nav-link:hover .sidebar-link-image {
   color: var(--primary);
+  filter: brightness(1) saturate(1);
 }
 
 .sidebar-public-links {

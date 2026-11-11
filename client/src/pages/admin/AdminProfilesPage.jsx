@@ -173,9 +173,9 @@ export default function AdminProfilesPage() {
               <div className="notifications-empty">No {section.title.toLowerCase()} match these filters.</div>
             ) : (
               <>
-                <div className="admin-list">
+                <div className="admin-profile-grid">
                   {items.map((item) => (
-                    <div className="admin-list-item" key={item.userId}>
+                    <article className="admin-list-item admin-profile-card" key={item.userId}>
                       {item.profilePhotoUrl
                         ? <PhotoPreview className="admin-avatar" src={item.profilePhotoUrl} alt={`${item.name} profile photo`} />
                         : <div className="admin-avatar">{initials(item.name)}</div>}
@@ -187,9 +187,10 @@ export default function AdminProfilesPage() {
                         <div className="admin-item-mail">{item.accountEmail}</div>
                         <div className="admin-item-meta">
                           {statusChip(item.status)}
-                          <span>{item.gender && (item.gender === 'male' ? '♂ Male' : '♀ Female')}</span>
-                          <span>{item.age ? `${item.age} yrs` : ''}</span>
-                          <span>{item.city || '—'}</span>
+                          {(item.gender || item.age) && (
+                            <span>{item.gender && (item.gender === 'male' ? '♂ Male' : '♀ Female')}{item.age ? ` · ${item.age} yrs` : ''}</span>
+                          )}
+                          {item.city && <span>{item.city}</span>}
                           <span>{item.completionPercent}% complete</span>
                           <span>Submitted: {fmtDate(item.submittedAt)}</span>
                           <span>Registered: {fmtDate(item.registeredAt)}</span>
@@ -207,7 +208,7 @@ export default function AdminProfilesPage() {
                           {busyId === item.userId ? 'Please wait…' : item.isActive ? 'Deactivate' : 'Activate'}
                         </button>
                       </div>
-                    </div>
+                    </article>
                   ))}
                 </div>
 

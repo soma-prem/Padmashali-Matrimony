@@ -83,17 +83,21 @@ export default function AdminContactMessagesPage() {
 
   return (
     <div>
-      <h1 className="dashboard-title" style={{ marginBottom: 12 }}>Contact Messages</h1>
-      <p style={{ fontSize: 14, marginBottom: 14 }}>
-        Messages sent by visitors through the <strong>Contact Us</strong> page.
-        Reply to visitors directly by email.
-      </p>
+      <div className="admin-section-header">
+        <h1>Contact Messages</h1>
+        <p>Messages sent by visitors through the <strong>Contact Us</strong> page. Reply to visitors directly by email.</p>
+      </div>
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+      <div className="admin-tab-bar" role="tablist" aria-label="Contact messages tabs">
         {TABS.map((t) => (
-          <button key={t.value} type="button"
-            className={`btn btn-sm ${tab === t.value ? 'btn-primary' : 'btn-outline'}`}
-            onClick={() => setTab(t.value)}>
+          <button
+            key={t.value}
+            type="button"
+            role="tab"
+            aria-selected={tab === t.value}
+            className={`admin-tab ${tab === t.value ? 'admin-tab--active' : ''}`}
+            onClick={() => setTab(t.value)}
+          >
             {t.label}
           </button>
         ))}

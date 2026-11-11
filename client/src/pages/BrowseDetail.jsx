@@ -9,10 +9,13 @@ function Row({ k, v }) {
   return <div><span className="k">{k}</span><span className="v">{text}</span></div>
 }
 
-function Group({ title, rows, children }) {
+function Group({ title, rows, children, profileId }) {
   return (
-    <div className="review-group">
-      <h4>{title}</h4>
+    <div className="review-group browse-detail-group">
+      <div className="browse-detail-group-heading">
+        <h4>{title}</h4>
+        {profileId && <span>Profile ID: {profileId.slice(0, 8).toUpperCase()}</span>}
+      </div>
       <div className="review-list">
         {rows.map(([label, value]) => <Row key={label} k={label} v={value} />)}
         {children}
@@ -25,6 +28,7 @@ export default function BrowseDetail() {
   const { profileId } = useParams()
   const navigate = useNavigate()
 
+  const [activeCategory, setActiveCategory] = useState('basic')
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -128,15 +132,25 @@ export default function BrowseDetail() {
 
         {/* photo gallery */}
         {galleryPhotos.length > 0 && (
-          <div className="detail-gallery">
-            {galleryPhotos.map((p) => <img key={p.id} src={p.url} alt={`${basic.name || 'Profile'} photo`} />)}
-          </div>
+          <section className="detail-gallery-section" aria-label="Additional profile photos">
+            <h2 className="detail-gallery-title">More photos</h2>
+            <div className="detail-gallery">
+              {galleryPhotos.map((p) => <img key={p.id} src={p.url} alt={`${basic.name || 'Profile'} photo`} />)}
+            </div>
+          </section>
         )}
 
-        {/* interest actions */}
-        <div className="detail-locked-note">
-          🔒 Contact details unlock after admin approval of an interest request.
-        </div>
+        {/* interest status */}
+        {rel === 'request_pending' ? (
+          <div className="detail-request-stage" role="status">
+            <span aria-hidden="true">⏳</span>
+            <span>Request pending — admin review in progress</span>
+          </div>
+        ) : rel !== 'connected' && (
+          <div className="detail-locked-note">
+            🔒 Contact details unlock after admin approval of an interest request.
+          </div>
+        )}
 
         {rel === 'connected' && (
           <div className="detail-connect-box">
@@ -152,11 +166,6 @@ export default function BrowseDetail() {
           {rel === 'none' && (
             <button type="button" className="btn btn-primary" disabled={sending} onClick={sendInterest}>
               {sending ? 'Sending…' : 'Send Interest'}
-            </button>
-          )}
-          {rel === 'request_pending' && (
-            <button type="button" className="btn btn-outline" disabled>
-              ⏳ Request pending — admin review in progress
             </button>
           )}
           {rel === 'connected' && (
@@ -183,71 +192,159 @@ export default function BrowseDetail() {
           </div>
         )}
 
-        {/* sections */}
-        <div className="review-grid">
-          <Group title="Basic &amp; Community" rows={[
-            ['Gender', basic.gender],
-            ['Date of birth', basic.dateOfBirth],
-            ['Height', basic.heightCm && `${basic.heightCm} cm`],
-            ['Weight', basic.weightKg && `${basic.weightKg} kg`],
-            ['Marital status', basic.maritalStatus],
-            ['Mother tongue', basic.motherTongue],
-            ['About me', basic.aboutMe],
-            ['Religion', community.religion],
-            ['Caste', community.caste],
-            ['Gotra', community.gotra],
-          ]} />
+        <div className="browse-detail-categories">
+          <div className="browse-detail-tabs" role="tablist" aria-label="Profile information categories">
+            {[
+              { id: 'basic', label: 'Basic' },
+              { id: 'community', label: 'Community' },
+              { id: 'horoscope', label: 'Horoscope' },
+              { id: 'education', label: 'Education & Career' },
+              { id: 'family', label: 'Family' },
+              { id: 'lifestyle', label: 'Lifestyle' },
+            ].map((category, categoryIndex) => (
+              <button
+                key={category.id}
+                id={`profile-tab-${category.id}`}
+                type="button"
+                role="tab"
+                aria-selected={activeCategory === category.id}
+                aria-controls={`profile-panel-${category.id}`}
+                tabIndex={activeCategory === category.id ? 0 : -1}
+                className={`browse-detail-tab${activeCategory === category.id ? ' is-active' : ''}`}
+                onClick={() => setActiveCategory(category.id)}
+                onKeyDown={(event) => {
+                  if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
+                  event.preventDefault()
+                  const direction = event.key === 'ArrowRight' ? 1 : -1
+                  const nextCategory = event.currentTarget.parentElement.children[
+                    (categoryIndex + direction + 6) % 6
+                  ]
+                  nextCategory.focus()
+                  nextCategory.click()
+                }}
+              >
+                {category.label}
+              </button>
+            ))}
+          </div>
 
-          <Group title="Horoscope" rows={[
-            ['Time of birth', horo.timeOfBirth],
-            ['Place of birth', horo.placeOfBirth],
-            ['Rashi', horo.rashi],
-            ['Nakshatra', horo.nakshatra],
-            ['Pada', horo.pada],
-            ['Manglik', horo.manglik],
-          ]}>
-            {horo.kundliImageUrl && (
-              <div className="detail-kundli">
-                <h5>Kundli image</h5>
-                <a href={horo.kundliImageUrl} target="_blank" rel="noreferrer">
-                  <img src={horo.kundliImageUrl} alt={`${basic.name || 'Profile'} Kundli chart`} loading="lazy" />
-                </a>
-              </div>
-            )}
-          </Group>
+          <section
+            id="profile-panel-basic"
+            className="browse-detail-panel"
+            role="tabpanel"
+            aria-labelledby="profile-tab-basic"
+            hidden={activeCategory !== 'basic'}
+          >
+            <Group title="Basic details" profileId={profile.profileId} rows={[
+              ['Gender', basic.gender],
+              ['Date of birth', basic.dateOfBirth],
+              ['Height', basic.heightCm && `${basic.heightCm} cm`],
+              ['Weight', basic.weightKg && `${basic.weightKg} kg`],
+              ['Marital status', basic.maritalStatus],
+              ['Mother tongue', basic.motherTongue],
+              ['About me', basic.aboutMe],
+            ]} />
+          </section>
 
-          <Group title="Education &amp; Career" rows={[
-            ['Qualification', edu.highestQualification],
-            ['College', edu.college],
-            ['Field', edu.fieldOfStudy],
-            ['Occupation', edu.occupation],
-            ['Company', edu.company],
-            ['Annual income', edu.annualIncome],
-          ]} />
+          <section
+            id="profile-panel-community"
+            className="browse-detail-panel"
+            role="tabpanel"
+            aria-labelledby="profile-tab-community"
+            hidden={activeCategory !== 'community'}
+          >
+            <Group title="Community details" rows={[
+              ['Religion', community.religion],
+              ['Caste / Sub-caste', [community.caste, community.subCasteKulam].filter(Boolean).join(' / ')],
+              ['Gotra', community.gotra],
+            ]} />
+          </section>
 
-          <Group title="Family" rows={[
-            ['Father', family.fatherName && `${family.fatherName}${family.fatherOccupation ? ` (${family.fatherOccupation})` : ''}`],
-            ["Father's age", family.fatherAge],
-            ['Mother', family.motherName && `${family.motherName}${family.motherOccupation ? ` (${family.motherOccupation})` : ''}`],
-            ["Mother's age", family.motherAge],
-            ['Brothers', family.brothers],
-            ['Brother details', formatSiblingDetails(family.brotherDetails, family.brotherNames, 'Wife')],
-            ['Sisters', family.sisters],
-            ['Sister details', formatSiblingDetails(family.sisterDetails, family.sisterNames, 'Husband')],
-            ['Native place', family.nativePlace],
-          ]} />
+          <section
+            id="profile-panel-horoscope"
+            className="browse-detail-panel"
+            role="tabpanel"
+            aria-labelledby="profile-tab-horoscope"
+            hidden={activeCategory !== 'horoscope'}
+          >
+            <Group title="Horoscope details" rows={[
+              ['Time of birth', horo.timeOfBirth],
+              ['Place of birth', horo.placeOfBirth],
+              ['Rashi', horo.rashi],
+              ['Nakshatra', horo.nakshatra],
+              ['Pada', horo.pada],
+              ['Manglik', horo.manglik],
+              ['Graha details', horo.grahaDetails],
+            ]}>
+              {horo.kundliImageUrl && (
+                <div className="detail-kundli">
+                  <h5>Kundli image</h5>
+                  <a href={horo.kundliImageUrl} target="_blank" rel="noreferrer">
+                    <img src={horo.kundliImageUrl} alt={`${basic.name || 'Profile'} Kundli chart`} loading="lazy" />
+                  </a>
+                </div>
+              )}
+            </Group>
+          </section>
 
-          <Group title="Lifestyle &amp; Location" rows={[
-            ['Diet', lifestyle.diet],
-            ['Smoking', lifestyle.smoking],
-            ['Drinking', lifestyle.drinking],
-            ['Hobbies', lifestyle.hobbies],
-            ['City', lifestyle.city],
-            ['State', lifestyle.state],
-            ['Country', lifestyle.country],
-            ['Willing to relocate', lifestyle.willingToRelocate],
-          ]} />
+          <section
+            id="profile-panel-education"
+            className="browse-detail-panel"
+            role="tabpanel"
+            aria-labelledby="profile-tab-education"
+            hidden={activeCategory !== 'education'}
+          >
+            <Group title="Education & Career details" rows={[
+              ['Qualification', edu.highestQualification],
+              ['College', edu.college],
+              ['Field of study', edu.fieldOfStudy],
+              ['Occupation', edu.occupation],
+              ['Company', edu.company],
+              ['Annual income', edu.annualIncome],
+            ]} />
+          </section>
 
+          <section
+            id="profile-panel-lifestyle"
+            className="browse-detail-panel"
+            role="tabpanel"
+            aria-labelledby="profile-tab-lifestyle"
+            hidden={activeCategory !== 'lifestyle'}
+          >
+            <Group title="Lifestyle details" rows={[
+              ['Diet', lifestyle.diet],
+              ['Smoking', lifestyle.smoking],
+              ['Drinking', lifestyle.drinking],
+              ['Hobbies', lifestyle.hobbies],
+              ['City', lifestyle.city],
+              ['State', lifestyle.state],
+              ['Country', lifestyle.country],
+              ['Willing to relocate', lifestyle.willingToRelocate],
+              ['Relocation location', lifestyle.relocationLocation],
+            ]} />
+          </section>
+
+          <section
+            id="profile-panel-family"
+            className="browse-detail-panel"
+            role="tabpanel"
+            aria-labelledby="profile-tab-family"
+            hidden={activeCategory !== 'family'}
+          >
+            <Group title="Family details" rows={[
+              ['Father', family.fatherName && `${family.fatherName}${family.fatherOccupation ? ` (${family.fatherOccupation})` : ''}`],
+              ["Father's age", family.fatherAge],
+              ['Mother', family.motherName && `${family.motherName}${family.motherOccupation ? ` (${family.motherOccupation})` : ''}`],
+              ["Mother's age", family.motherAge],
+              ['Brothers', family.brothers],
+              ['Brother details', formatSiblingDetails(family.brotherDetails, family.brotherNames, 'Wife')],
+              ['Sisters', family.sisters],
+              ['Sister details', formatSiblingDetails(family.sisterDetails, family.sisterNames, 'Husband')],
+              ['Native place', family.nativePlace],
+              ['Family type', family.familyType],
+              ['Family values', family.familyValues],
+            ]} />
+          </section>
         </div>
       </div>
     </div>

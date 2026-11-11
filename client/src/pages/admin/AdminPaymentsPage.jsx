@@ -75,38 +75,62 @@ export default function AdminPaymentsPage() {
 
   return (
     <div>
-      <h1 className="dashboard-title" style={{ marginBottom: 16 }}>Payments</h1>
-      <div className="admin-filters">
-        <button type="button" className={`btn btn-sm ${tab === 'submitted' ? 'btn-primary' : 'btn-outline'}`}
-          onClick={() => setTab('submitted')}>
+      <div className="admin-section-header">
+        <h1>Payments</h1>
+        <p>Review and verify member payments and proof submissions.</p>
+      </div>
+
+      <div className="admin-tab-bar" role="tablist" aria-label="Payments tabs">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'submitted'}
+          className={`admin-tab ${tab === 'submitted' ? 'admin-tab--active' : ''}`}
+          onClick={() => setTab('submitted')}
+        >
           Needs verification
         </button>
-        <button type="button" className={`btn btn-sm ${tab === 'verified' ? 'btn-primary' : 'btn-outline'}`}
-          onClick={() => setTab('verified')}>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'verified'}
+          className={`admin-tab ${tab === 'verified' ? 'admin-tab--active' : ''}`}
+          onClick={() => setTab('verified')}
+        >
           Completed
         </button>
       </div>
-      <form className="admin-filters admin-payment-filters" onSubmit={applyFilters}>
-        <input
-          className="form-input search"
-          type="search"
-          placeholder="Search name, email or UTR…"
-          aria-label="Search payments by member name, email, or UTR"
-          value={searchInput}
-          onChange={(event) => setSearchInput(event.target.value)}
-        />
-        <label className="admin-payment-date-filter">
-          <span>{tab === 'verified' ? 'Completed from' : 'Submitted from'}</span>
-          <input className="form-input" type="date" value={fromInput}
-            onChange={(event) => setFromInput(event.target.value)} />
-        </label>
-        <label className="admin-payment-date-filter">
-          <span>{tab === 'verified' ? 'Completed to' : 'Submitted to'}</span>
-          <input className="form-input" type="date" value={toInput}
-            onChange={(event) => setToInput(event.target.value)} />
-        </label>
-        <button type="submit" className="btn btn-primary btn-sm">Apply filters</button>
-        <button type="button" className="btn btn-outline btn-sm" onClick={clearFilters}>Clear</button>
+
+      <form className="admin-payment-filter-panel" onSubmit={applyFilters}>
+        <div className="admin-payment-search-wrap">
+          <span className="admin-payment-search-icon" aria-hidden="true">⌕</span>
+          <input
+            className="form-input admin-payment-search"
+            type="search"
+            placeholder="Search name, email or UTR…"
+            aria-label="Search payments by member name, email, or UTR"
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+          />
+        </div>
+
+        <div className="admin-payment-date-grid">
+          <label className="admin-payment-date-filter">
+            <span>{tab === 'verified' ? 'Completed from' : 'Submitted from'}</span>
+            <input className="form-input" type="date" value={fromInput}
+              onChange={(event) => setFromInput(event.target.value)} />
+          </label>
+          <label className="admin-payment-date-filter">
+            <span>{tab === 'verified' ? 'Completed to' : 'Submitted to'}</span>
+            <input className="form-input" type="date" value={toInput}
+              onChange={(event) => setToInput(event.target.value)} />
+          </label>
+        </div>
+
+        <div className="admin-payment-actions-row">
+          <button type="submit" className="btn btn-primary admin-payment-submit-btn">Apply filters</button>
+          <button type="button" className="btn btn-outline admin-payment-clear-btn" onClick={clearFilters}>Clear</button>
+        </div>
       </form>
       {error && <p className="form-error" role="alert">{error}</p>}
       {loading && <div className="page-loading">Loading payments…</div>}
