@@ -10,7 +10,7 @@ export default function Toaster() {
   const timers = useRef(new Map())
 
   useEffect(() => {
-    const off = onToast(({ kind, text, key, duration = 2000 }) => {
+    const off = onToast(({ kind, text, key, duration = 4000 }) => {
       setToasts((list) => [...list, { kind, text, key }])
       const timer = setTimeout(() => {
         setToasts((list) => list.filter((t) => t.key !== key))
@@ -34,10 +34,13 @@ export default function Toaster() {
   if (toasts.length === 0) return null
 
   return (
-    <div className="toaster" aria-live="polite">
+    <div className="toaster" aria-live="polite" aria-relevant="additions">
       {toasts.map((t) => (
         <div key={t.key} className={`toast toast--${t.kind}`} role={t.kind === 'error' ? 'alert' : 'status'}>
-          <span>{t.kind === 'success' ? '✔ ' : '✖ '}{t.text}</span>
+          <span className="toast-content">
+            <span className="toast-icon" aria-hidden="true">{t.kind === 'success' ? '✓' : '!'}</span>
+            <span>{t.text}</span>
+          </span>
           <button type="button" className="toast-close" aria-label="Dismiss notification"
             onClick={() => dismiss(t.key)}>×</button>
         </div>

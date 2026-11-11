@@ -119,7 +119,7 @@ export async function apiUpload(path, { file, field = 'image', method = 'POST', 
  * toast.success('Saved!'), toast.error('Something failed.')
  */
 const TOAST_EVENT = 'mb-toast'
-export function toast(kind, text, ms = 2000) {
+export function toast(kind, text, ms = 4000) {
   window.dispatchEvent(new CustomEvent(TOAST_EVENT, {
     detail: { kind, text, key: Date.now() + Math.random(), duration: ms },
   }))

@@ -665,8 +665,6 @@
   .admin-item-actions { flex-direction: row; }
 }
 
-.btn-sm { padding: 7px 12px; font-size: 13px; }
-
 .btn-danger {
   color: #fff;
   background: var(--error);

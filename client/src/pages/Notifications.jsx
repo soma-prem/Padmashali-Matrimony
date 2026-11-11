@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { api } from '../api/api.js'
+import { api, toast } from '../api/api.js'
 
 function timeAgo(iso) {
   const s = Math.max(1, Math.floor((Date.now() - new Date(iso).getTime()) / 1000))
@@ -42,7 +42,7 @@ export default function Notifications() {
     try {
       await api(`/notifications/${id}/read`, { method: 'POST' })
     } catch (err) {
-      setError(err.message)
+      toast.error(err.message)
       setItems((list) => list.map((n) => (n.id === id ? { ...n, isRead: false } : n)))
     }
   }
@@ -53,8 +53,9 @@ export default function Notifications() {
     try {
       await api('/notifications/read-all', { method: 'POST' })
       setItems((list) => list.map((n) => ({ ...n, isRead: true })))
+      toast.success('All notifications marked as read.')
     } catch (err) {
-      setError(err.message)
+      toast.error(err.message)
     } finally {
       setBusyAll(false)
     }

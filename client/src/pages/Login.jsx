@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import PasswordInput from '../components/PasswordInput.jsx'
+import { toast } from '../api/api.js'
 
 export default function Login() {
   const { login } = useAuth()
@@ -10,10 +11,19 @@ export default function Login() {
   const justRegistered = location.state?.registered || false
   const passwordReset = location.state?.passwordReset || false
   const presetEmail = location.state?.email || ''
+  const successToastShown = useRef(false)
 
   const [form, setForm] = useState({ email: presetEmail, password: '' })
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  useEffect(() => {
+    if (successToastShown.current) return
+    if (justRegistered) toast.success('Registration successful! Please log in.')
+    else if (passwordReset) toast.success('Password reset successful! Please log in with your new password.')
+    else return
+    successToastShown.current = true
+  }, [justRegistered, passwordReset])
 
   const update = (key) => (e) => {
     setForm((prev) => ({ ...prev, [key]: e.target.value }))
@@ -48,18 +58,6 @@ export default function Login() {
       <form className="auth-card" onSubmit={handleSubmit} noValidate>
         <h1>Welcome back</h1>
         <p className="auth-subtitle">Sign in to your account</p>
-
-        {justRegistered && (
-          <p className="form-success" role="status">
-            Registration successful! Please log in.
-          </p>
-        )}
-
-        {passwordReset && (
-          <p className="form-success" role="status">
-            Password reset successful! Please log in with your new password.
-          </p>
-        )}
 
         {error && <p className="form-error" role="alert">{error}</p>}
 

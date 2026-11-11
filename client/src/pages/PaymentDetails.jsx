@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { api, apiUpload } from '../api/api.js'
+import { api, apiUpload, toast } from '../api/api.js'
 import PhotoPreview from '../components/admin/PhotoPreview.jsx'
 
 const STATUS_LABELS = {
@@ -41,23 +41,23 @@ export default function PaymentDetails() {
   const submit = async (event) => {
     event.preventDefault()
     if (!screenshot) {
-      setError('Choose a screenshot of your completed payment.')
+      toast.error('Choose a screenshot of your completed payment.')
       return
     }
 
     setSubmitting(true)
-    setError('')
     try {
       const response = await apiUpload('/payment/submit', {
         file: screenshot,
         fields: { utrNumber },
       })
       setPayment(response.data.payment)
+      toast.success(response.message || 'Payment details sent for verification.')
       setUtrNumber('')
       setScreenshot(null)
       setInputKey((key) => key + 1)
     } catch (err) {
-      setError(err.message)
+      toast.error(err.message)
     } finally {
       setSubmitting(false)
     }
@@ -119,13 +119,6 @@ export default function PaymentDetails() {
                   className="payment-qr-image"
                 />
               </div>
-            )}
-
-            {payment.status === 'submitted' && (
-              <p className="form-success">Your UTR and screenshot have been sent to the admin. You can browse profiles after verification.</p>
-            )}
-            {payment.status === 'verified' && (
-              <p className="form-success">Your payment is verified. You can now browse profiles.</p>
             )}
 
             {canSubmit && (

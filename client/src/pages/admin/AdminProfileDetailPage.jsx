@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { api, apiUpload } from '../../api/api.js'
+import { api, apiUpload, toast } from '../../api/api.js'
 import { formatSiblingDetails } from '../../utils/family.js'
 import ConfirmDialog from '../../components/admin/ConfirmDialog.jsx'
 import PhotoPreview from '../../components/admin/PhotoPreview.jsx'
@@ -33,8 +33,6 @@ export default function AdminProfileDetailPage() {
   const [payload, setPayload] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [actionError, setActionError] = useState('')
-  const [message, setMessage] = useState('')
   const [showRejectBox, setShowRejectBox] = useState(false)
   const [reason, setReason] = useState('')
   const [busy, setBusy] = useState(false)
@@ -61,12 +59,13 @@ export default function AdminProfileDetailPage() {
 
   const doApprove = async () => {
     setConfirmation(null)
-    setBusy(true); setActionError(''); setMessage('')
+    setBusy(true)
     try {
-      await api(`/admin/profiles/${userId}/approve`, { method: 'POST' })
+      const data = await api(`/admin/profiles/${userId}/approve`, { method: 'POST' })
+      toast.success(data.message || 'Profile approved.')
       await load()
     } catch (err) {
-      setActionError(err.message)
+      toast.error(err.message)
     } finally {
       setBusy(false)
     }
@@ -74,22 +73,22 @@ export default function AdminProfileDetailPage() {
 
   const doReject = async () => {
     if (reason.trim().length < 5) {
-      setActionError('Give a reason of at least 5 characters.')
+      toast.error('Give a reason of at least 5 characters.')
       return
     }
     setConfirmation(null)
-    setBusy(true); setActionError(''); setMessage('')
+    setBusy(true)
     try {
       const data = await api(`/admin/profiles/${userId}/reject`, {
         method: 'POST',
         body: { reason: reason.trim() },
       })
-      setMessage(data.message || 'Profile rejected.')
+      toast.success(data.message || 'Profile rejected.')
       setReason('')
       setShowRejectBox(false)
       await load()
     } catch (err) {
-      setActionError(err.message)
+      toast.error(err.message)
     } finally {
       setBusy(false)
     }
@@ -98,24 +97,23 @@ export default function AdminProfileDetailPage() {
   const sendPaymentRequest = async (event) => {
     event.preventDefault()
     if (!paymentQr) {
-      setActionError('Choose the payment QR/scanner image.')
+      toast.error('Choose the payment QR/scanner image.')
       return
     }
 
     setPaymentBusy(true)
-    setActionError('')
-    setMessage('')
     try {
-      await apiUpload(`/admin/profiles/${userId}/payment-request`, {
+      const data = await apiUpload(`/admin/profiles/${userId}/payment-request`, {
         file: paymentQr,
         fields: { amount: paymentAmount },
       })
+      toast.success(data.message || 'Payment request sent.')
       setPaymentQr(null)
       setPaymentInputKey((key) => key + 1)
       setPaymentAmount('')
       await load()
     } catch (err) {
-      setActionError(err.message)
+      toast.error(err.message)
     } finally {
       setPaymentBusy(false)
     }
@@ -123,13 +121,12 @@ export default function AdminProfileDetailPage() {
 
   const retryPaymentUnlock = async () => {
     setPaymentBusy(true)
-    setActionError('')
     try {
       const data = await api(`/admin/payments/${payment.id}/verify`, { method: 'POST' })
-      setMessage(data.message || 'Payment verified.')
+      toast.success(data.message || 'Payment verified.')
       await load()
     } catch (err) {
-      setActionError(err.message)
+      toast.error(err.message)
     } finally {
       setPaymentBusy(false)
     }
@@ -175,22 +172,17 @@ export default function AdminProfileDetailPage() {
         )}
       </div>
 
-      {profile.status === 'approved' && (
-        <div className="profile-status-timeline">
-          <ProfileTimeline
-            status={profile.status}
-            paymentStatus={payment?.status}
-            paymentRequired={profile.paymentRequired}
-            variant="compact"
-            title={null}
-          />
-        </div>
-      )}
+      <div className="profile-status-timeline">
+        <ProfileTimeline
+          status={profile.status}
+          paymentStatus={payment?.status}
+          paymentRequired={profile.paymentRequired}
+          variant="compact"
+          title={null}
+        />
+      </div>
 
       <div className="wizard-card" style={{ marginBottom: 14 }}>
-        {message && <div className="profile-banner profile-banner--success" role="status">✔ {message}</div>}
-        {actionError && <div className="profile-banner profile-banner--error" role="alert">{actionError}</div>}
-
         {/* photos */}
         <ReviewGroup title="Photos">
           {photos.length > 0 ? (
@@ -317,17 +309,6 @@ export default function AdminProfileDetailPage() {
             </button>
           </form>
         )}
-        {profile.status === 'approved' && payment?.status === 'requested' && (
-          <p className="form-success" role="status">
-            Payment request sent on {new Date(payment.request_sent_at).toLocaleString()} for ₹{Number(payment.amount).toLocaleString('en-IN')}.
-          </p>
-        )}
-        {profile.status === 'approved' && payment?.status === 'submitted' && (
-          <p className="form-success" role="status">Payment submitted by the member. Review it in Payments.</p>
-        )}
-        {profile.status === 'approved' && payment?.status === 'rejected' && (
-          <p className="form-success" role="status">Payment was returned to the member for correction. They can resubmit it in Payment details.</p>
-        )}
         {profile.status === 'approved' && profile.paymentRequired && payment?.status === 'verified' && (
           <div className="reject-box">
             <p style={{ margin: '0 0 10px' }}>Payment is verified; retry unlocking browsing if the previous update failed.</p>
@@ -335,9 +316,6 @@ export default function AdminProfileDetailPage() {
               {paymentBusy ? 'Please wait…' : 'Unlock browsing'}
             </button>
           </div>
-        )}
-        {profile.status === 'approved' && !profile.paymentRequired && payment?.status === 'verified' && (
-          <p className="form-success" role="status">Payment verified. The member can browse profiles.</p>
         )}
 
         {showRejectBox && (
@@ -349,7 +327,7 @@ export default function AdminProfileDetailPage() {
             <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
               <button type="button" className="btn btn-danger btn-sm" disabled={busy} onClick={() => {
                 if (reason.trim().length < 5) {
-                  setActionError('Give a reason of at least 5 characters.')
+                  toast.error('Give a reason of at least 5 characters.')
                   return
                 }
                 setConfirmation({

@@ -85,10 +85,27 @@
   background: var(--card);
 }
 
+.profile-status-timeline .pt-step--completed {
+  border-color: #c9dfce;
+  background: #f7fbf8;
+}
+
+.profile-status-timeline .pt-step--in_progress {
+  border-color: #ead9aa;
+  background: #fffdf6;
+}
+
+.profile-status-timeline .pt-step--rejected {
+  border-color: #ebcbc7;
+  background: #fff9f8;
+}
+
 .profile-status-timeline .pt-compact-title {
   font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .profile-status-timeline .pt-icon {

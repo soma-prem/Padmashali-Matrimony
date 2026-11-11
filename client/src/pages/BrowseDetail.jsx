@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { api } from '../api/api.js'
+import { api, toast } from '../api/api.js'
 import { formatSiblingDetails } from '../utils/family.js'
 
 function Row({ k, v }) {
@@ -32,8 +32,6 @@ export default function BrowseDetail() {
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [actionError, setActionError] = useState('')
-  const [actionMessage, setActionMessage] = useState('')
   const [sending, setSending] = useState(false)
 
   const load = async () => {
@@ -53,14 +51,12 @@ export default function BrowseDetail() {
 
   const sendInterest = async () => {
     setSending(true)
-    setActionError('')
-    setActionMessage('')
     try {
       const data = await api('/requests', { method: 'POST', body: { receiverProfileId: profileId } })
-      setActionMessage(data.message)
+      toast.success(data.message || 'Interest request sent.')
       await load() // refresh relationship status
     } catch (err) {
-      setActionError(err.message)
+      toast.error(err.message)
     } finally {
       setSending(false)
     }
@@ -158,9 +154,6 @@ export default function BrowseDetail() {
             or open <strong>My Connections</strong> anytime.
           </div>
         )}
-
-        {actionMessage && <div className="profile-banner profile-banner--success" role="status">✔ {actionMessage}</div>}
-        {actionError && <div className="profile-banner profile-banner--error" role="alert">{actionError}</div>}
 
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', margin: '6px 0 16px' }}>
           {rel === 'none' && (

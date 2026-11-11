@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { api } from '../../api/api.js'
+import { api, toast } from '../../api/api.js'
 import ConfirmDialog from '../../components/admin/ConfirmDialog.jsx'
 import PhotoPreview from '../../components/admin/PhotoPreview.jsx'
 
@@ -60,14 +60,13 @@ export default function AdminPaymentsPage() {
   const runAction = async (item, action) => {
     setConfirmation(null)
     setBusyId(item.id)
-    setError('')
     try {
       const response = await api(`/admin/payments/${item.id}/${action}`, { method: 'POST' })
       await load()
-      if (action === 'verify') setError('')
+      toast.success(response.message || (action === 'verify' ? 'Payment verified.' : 'Payment returned for correction.'))
       return response
     } catch (err) {
-      setError(err.message)
+      toast.error(err.message)
     } finally {
       setBusyId(null)
     }

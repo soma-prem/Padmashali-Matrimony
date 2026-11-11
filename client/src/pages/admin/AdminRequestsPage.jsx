@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { api } from '../../api/api.js'
+import { api, toast } from '../../api/api.js'
 import { formatSiblingDetails } from '../../utils/family.js'
 import ConfirmDialog from '../../components/admin/ConfirmDialog.jsx'
 import PhotoPreview from '../../components/admin/PhotoPreview.jsx'
@@ -144,8 +144,6 @@ export default function AdminRequestsPage() {
   const [detail, setDetail] = useState(null)
   const [detailLoading, setDetailLoading] = useState(false)
   const [detailError, setDetailError] = useState('')
-  const [actionError, setActionError] = useState('')
-  const [message, setMessage] = useState('')
   const [rejectOpen, setRejectOpen] = useState(false)
   const [reason, setReason] = useState('')
   const [busy, setBusy] = useState(false)
@@ -167,10 +165,8 @@ export default function AdminRequestsPage() {
 
   useEffect(() => { load() }, [tab, page]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const openDetail = async (id, { keepMessage = false } = {}) => {
+  const openDetail = async (id) => {
     setOpenId(id)
-    if (!keepMessage) setMessage('')
-    setActionError('')
     setDetailLoading(true)
     try {
       const data = await api(`/admin/requests/${id}`)
@@ -184,13 +180,13 @@ export default function AdminRequestsPage() {
 
   const doApprove = async () => {
     setConfirmation(null)
-    setBusy(true); setActionError(''); setMessage('')
+    setBusy(true)
     try {
       const data = await api(`/admin/requests/${openId}/approve`, { method: 'POST' })
-      setMessage(data.message)
-      await Promise.all([load(), openDetail(openId, { keepMessage: true })])
+      toast.success(data.message || 'Request approved and users connected.')
+      await Promise.all([load(), openDetail(openId)])
     } catch (err) {
-      setActionError(err.message)
+      toast.error(err.message)
     } finally {
       setBusy(false)
     }
@@ -198,15 +194,15 @@ export default function AdminRequestsPage() {
 
   const doReject = async () => {
     setConfirmation(null)
-    setBusy(true); setActionError(''); setMessage('')
+    setBusy(true)
     try {
       const data = await api(`/admin/requests/${openId}/reject`, { method: 'POST', body: { reason: reason.trim() } })
-      setMessage(data.message)
+      toast.success(data.message || 'Request rejected.')
       setRejectOpen(false)
       setReason('')
-      await Promise.all([load(), openDetail(openId, { keepMessage: true })])
+      await Promise.all([load(), openDetail(openId)])
     } catch (err) {
-      setActionError(err.message)
+      toast.error(err.message)
     } finally {
       setBusy(false)
     }
@@ -275,16 +271,13 @@ export default function AdminRequestsPage() {
         <div>
           <div className="admin-detail-top">
             <button type="button" className="btn btn-outline btn-sm"
-              onClick={() => { setOpenId(null); setDetail(null); setMessage('') }}>
+              onClick={() => { setOpenId(null); setDetail(null) }}>
               ← Back to {tab === 'all' ? 'all' : tab} requests
             </button>
           </div>
 
           {detailLoading && <div className="page-loading">Loading both profiles…</div>}
           {detailError && <p className="form-error">{detailError}</p>}
-          {message && <div className="profile-banner profile-banner--success" role="status">✔ {message}</div>}
-          {actionError && <div className="profile-banner profile-banner--error" role="alert">{actionError}</div>}
-
           {detail && (
             <>
               <div className="side-by-side">
