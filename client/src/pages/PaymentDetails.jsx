@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api, apiUpload, toast } from '../api/api.js'
 import PhotoPreview from '../components/admin/PhotoPreview.jsx'
+import { useLanguage } from '../context/LanguageContext.jsx'
 
 const STATUS_LABELS = {
   requested: 'Payment requested',
@@ -15,6 +16,7 @@ function fmtDate(value) {
 }
 
 export default function PaymentDetails() {
+  const { t } = useLanguage()
   const [payment, setPayment] = useState(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -41,7 +43,7 @@ export default function PaymentDetails() {
   const submit = async (event) => {
     event.preventDefault()
     if (!screenshot) {
-      toast.error('Choose a screenshot of your completed payment.')
+      toast.error(t('Choose a screenshot of your completed payment.'))
       return
     }
 
@@ -52,7 +54,7 @@ export default function PaymentDetails() {
         fields: { utrNumber },
       })
       setPayment(response.data.payment)
-      toast.success(response.message || 'Payment details sent for verification.')
+      toast.success(response.message || t('Payment details sent for verification.'))
       setUtrNumber('')
       setScreenshot(null)
       setInputKey((key) => key + 1)
@@ -68,16 +70,16 @@ export default function PaymentDetails() {
   return (
     <div className="dashboard-page payment-page">
       <div className="dashboard-card">
-        <h1 className="dashboard-title">Payment details</h1>
-        <p className="dashboard-sub">View your membership payment request and submit payment proof for verification.</p>
+        <h1 className="dashboard-title">{t('Payment details')}</h1>
+        <p className="dashboard-sub">{t('View your membership payment request and submit payment proof for verification.')}</p>
 
-        {loading && <div className="page-loading">Loading payment details…</div>}
+        {loading && <div className="page-loading">{t('Loading payment details…')}</div>}
         {error && <p className="form-error" role="alert">{error}</p>}
 
         {!loading && !error && !payment && (
           <div className="payment-empty">
-            <h2>Payment request not sent yet</h2>
-            <p>Your profile must be approved first. The admin will send the amount and QR/scanner image here.</p>
+            <h2>{t('Payment request not sent yet')}</h2>
+            <p>{t('Your profile must be approved first. The admin will send the amount and QR/scanner image here.')}</p>
           </div>
         )}
 
@@ -88,34 +90,34 @@ export default function PaymentDetails() {
             </div>
 
             <dl className="payment-summary">
-              <div><dt>Request date and time</dt><dd>{fmtDate(payment.requestSentAt)}</dd></div>
+              <div><dt>{t('Request date and time')}</dt><dd>{fmtDate(payment.requestSentAt)}</dd></div>
               <div>
-                <dt>Amount</dt>
+                <dt>{t('Amount')}</dt>
                 <dd>{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(payment.amount)}</dd>
               </div>
-              {payment.submittedAt && <div><dt>Payment submitted</dt><dd>{fmtDate(payment.submittedAt)}</dd></div>}
-              {payment.reviewedAt && <div><dt>Last reviewed</dt><dd>{fmtDate(payment.reviewedAt)}</dd></div>}
-              {payment.utrNumber && <div><dt>UTR number</dt><dd>{payment.utrNumber}</dd></div>}
+              {payment.submittedAt && <div><dt>{t('Payment submitted')}</dt><dd>{fmtDate(payment.submittedAt)}</dd></div>}
+              {payment.reviewedAt && <div><dt>{t('Last reviewed')}</dt><dd>{fmtDate(payment.reviewedAt)}</dd></div>}
+              {payment.utrNumber && <div><dt>{t('UTR number')}</dt><dd>{payment.utrNumber}</dd></div>}
             </dl>
 
             {payment.rejectionReason && <p className="form-error">{payment.rejectionReason}</p>}
 
             <div className="payment-qr">
-              <h2>Scan to pay</h2>
+              <h2>{t('Scan to pay')}</h2>
               <PhotoPreview
                 src={payment.qrImageUrl}
-                alt="Membership payment QR code"
+                alt={t('Membership payment QR code')}
                 className="payment-qr-image"
               />
-              <p>Use your payment app to scan the QR code. After paying, enter the UTR number and upload your payment screenshot below.</p>
+              <p>{t('Use your payment app to scan the QR code. After paying, enter the UTR number and upload your payment screenshot below.')}</p>
             </div>
 
             {payment.paymentScreenshotUrl && (
               <div className="payment-qr">
-                <h2>Your payment screenshot</h2>
+                <h2>{t('Your payment screenshot')}</h2>
                 <PhotoPreview
                   src={payment.paymentScreenshotUrl}
-                  alt="Your submitted payment screenshot"
+                  alt={t('Your submitted payment screenshot')}
                   className="payment-qr-image"
                 />
               </div>
@@ -123,23 +125,23 @@ export default function PaymentDetails() {
 
             {canSubmit && (
               <form className="payment-submit-form" onSubmit={submit}>
-                <h2>{payment.status === 'rejected' ? 'Resubmit payment details' : 'Submit payment details'}</h2>
+                <h2>{payment.status === 'rejected' ? t('Resubmit payment details') : t('Submit payment details')}</h2>
                 <div className="payment-form-row">
-                  <label htmlFor="payment-utr">UTR number</label>
+                  <label htmlFor="payment-utr">{t('UTR number')}</label>
                   <input id="payment-utr" className="form-input" required minLength={6} maxLength={50}
                     pattern="[A-Za-z0-9][A-Za-z0-9/-]{5,49}"
-                    title="Use 6–50 letters, numbers, / or -."
+                    title={t('Use 6–50 letters, numbers, / or -.')}
                     value={utrNumber} onChange={(event) => setUtrNumber(event.target.value)} />
                 </div>
                 <div className="payment-form-row">
-                  <label htmlFor="payment-screenshot">Payment screenshot</label>
+                  <label htmlFor="payment-screenshot">{t('Payment screenshot')}</label>
                   <input key={inputKey} id="payment-screenshot" className="form-input" type="file"
                     accept="image/jpeg,image/png,image/webp" required
                     onChange={(event) => setScreenshot(event.target.files?.[0] ?? null)} />
                 </div>
                 <div className="payment-form-actions">
                   <button type="submit" className="btn btn-primary" disabled={submitting}>
-                    {submitting ? 'Submitting…' : 'Send payment for verification'}
+                    {submitting ? t('Submitting…') : t('Send payment for verification')}
                   </button>
                 </div>
               </form>

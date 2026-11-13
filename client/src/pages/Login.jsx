@@ -3,9 +3,11 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import PasswordInput from '../components/PasswordInput.jsx'
 import { toast } from '../api/api.js'
+import { useLanguage } from '../context/LanguageContext.jsx'
 
 export default function Login() {
   const { login } = useAuth()
+  const { t } = useLanguage()
   const navigate = useNavigate()
   const location = useLocation()
   const justRegistered = location.state?.registered || false
@@ -56,13 +58,13 @@ export default function Login() {
   return (
     <div className="auth-page">
       <form className="auth-card" onSubmit={handleSubmit} noValidate>
-        <h1>Welcome back</h1>
-        <p className="auth-subtitle">Sign in to your account</p>
+        <h1>{t('Welcome back')}</h1>
+        <p className="auth-subtitle">{t('Sign in to your account')}</p>
 
         {error && <p className="form-error" role="alert">{error}</p>}
 
         <label className="form-label" htmlFor="login-email">
-          Email
+          {t('Email')}
         </label>
         <input
           id="login-email"
@@ -80,7 +82,7 @@ export default function Login() {
         </label>
         <PasswordInput
           id="login-password"
-          placeholder="Your password"
+          placeholder={t('Your password')}
           value={form.password}
           onChange={update('password')}
           autoComplete="current-password"
@@ -88,15 +90,15 @@ export default function Login() {
         />
 
         <p className="forgot-link">
-          <Link to="/forgot-password">Forgot password?</Link>
+          <Link to="/forgot-password">{t('Forgot password?')}</Link>
         </p>
 
         <button type="submit" className="btn btn-primary btn-block" disabled={submitting}>
-          {submitting ? 'Signing in…' : 'Login'}
+          {submitting ? t('Signing in…') : t('Login')}
         </button>
 
         <p className="auth-switch">
-          New here? <Link to="/register">Register</Link>
+          {t('New here?')} <Link to="/register">{t('Register')}</Link>
         </p>
       </form>
     </div>

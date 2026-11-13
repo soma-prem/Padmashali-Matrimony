@@ -4,6 +4,7 @@ import { api } from '../../api/api.js'
 import ConfirmDialog from '../../components/admin/ConfirmDialog.jsx'
 import PhotoPreview from '../../components/admin/PhotoPreview.jsx'
 import AdminPagination from '../../components/admin/AdminPagination.jsx'
+import { useLanguage } from '../../context/LanguageContext.jsx'
 
 const PROFILE_SECTIONS = [
   { status: 'pending_approval', title: 'Pending profiles' },
@@ -38,6 +39,7 @@ function statusChip(status) {
 }
 
 export default function AdminProfilesPage() {
+  const { t } = useLanguage()
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
 
@@ -122,11 +124,11 @@ export default function AdminProfilesPage() {
   const confirmToggleActive = (item) => {
     const target = !item.isActive
     setConfirmation({
-      title: target ? 'Activate account?' : 'Deactivate account?',
+      title: target ? t('Activate account?') : t('Deactivate account?'),
       message: target
-        ? `Activate ${item.accountEmail}?`
-        : `Deactivate ${item.accountEmail}? They will no longer be able to log in.`,
-      confirmLabel: target ? 'Activate' : 'Deactivate',
+        ? `${t('Activate')} ${item.accountEmail}?`
+        : `${t('Deactivate')} ${item.accountEmail}? ${t('They will no longer be able to log in.')}`,
+      confirmLabel: t(target ? 'Activate' : 'Deactivate'),
       danger: !target,
       action: () => toggleActive(item),
     })
@@ -138,27 +140,27 @@ export default function AdminProfilesPage() {
 
   return (
     <div>
-      <h1 className="dashboard-title" style={{ marginBottom: 16 }}>Profiles &amp; Users</h1>
+      <h1 className="dashboard-title" style={{ marginBottom: 16 }}>{t('Profiles & Users')}</h1>
 
       <div className="admin-filters">
         <input
           className="form-input search"
-          placeholder="Search name or email…"
+          placeholder={t('Search name or email…')}
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
         />
         <select className="form-input" value={gender} onChange={(e) => setFilter('gender', e.target.value)}>
-          {GENDER_OPTIONS.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
+          {GENDER_OPTIONS.map((g) => <option key={g.value} value={g.value}>{g.value ? g.label : t(g.label)}</option>)}
         </select>
         <select className="form-input" value={profileView} onChange={(e) => setProfileView(e.target.value)}>
           {PROFILE_VIEWS.map((view) => (
-            <option key={view.value} value={view.value}>{view.label}</option>
+            <option key={view.value} value={view.value}>{t(view.label)}</option>
           ))}
         </select>
       </div>
 
       {error && <p className="form-error">{error}</p>}
-      {loading && <div className="page-loading">Loading profiles…</div>}
+      {loading && <div className="page-loading">{t('Loading profiles…')}</div>}
 
       {!loading && !error && visibleSections.map((section) => {
         const data = sections[section.status]
@@ -168,9 +170,9 @@ export default function AdminProfilesPage() {
 
         return (
           <section className="admin-profile-section" key={section.status}>
-            <h2>{section.title}{data ? ` (${data.total})` : ''}</h2>
+            <h2>{t(section.title)}{data ? ` (${data.total})` : ''}</h2>
             {items.length === 0 ? (
-              <div className="notifications-empty">No {section.title.toLowerCase()} match these filters.</div>
+              <div className="notifications-empty">{t('No profiles in this section match these filters.')}</div>
             ) : (
               <>
                 <div className="admin-profile-grid">
@@ -182,7 +184,7 @@ export default function AdminProfilesPage() {
 
                       <div className="admin-item-main">
                         <div className="admin-item-name">
-                          {item.name} {item.isActive === false && <span className="inactive-tag">Deactivated</span>}
+                          {item.name} {item.isActive === false && <span className="inactive-tag">{t('Deactivated')}</span>}
                         </div>
                         <div className="admin-item-mail">{item.accountEmail}</div>
                         <div className="admin-item-meta">
@@ -191,21 +193,21 @@ export default function AdminProfilesPage() {
                             <span>{item.gender && (item.gender === 'male' ? '♂ Male' : '♀ Female')}{item.age ? ` · ${item.age} yrs` : ''}</span>
                           )}
                           {item.city && <span>{item.city}</span>}
-                          <span>{item.completionPercent}% complete</span>
-                          <span>Submitted: {fmtDate(item.submittedAt)}</span>
-                          <span>Registered: {fmtDate(item.registeredAt)}</span>
+                          <span>{item.completionPercent}% {t('complete')}</span>
+                          <span>{t('Submitted')}: {fmtDate(item.submittedAt)}</span>
+                          <span>{t('Registered')}: {fmtDate(item.registeredAt)}</span>
                         </div>
                       </div>
 
                       <div className="admin-item-actions">
                         <button type="button" className="btn btn-outline btn-sm"
                           onClick={() => navigate(`/admin/profiles/${item.userId}`)}>
-                          View
+                          {t('View')}
                         </button>
                         <button type="button" className={`btn btn-sm ${item.isActive ? 'btn-danger' : 'btn-primary'}`}
                           disabled={busyId === item.userId}
                           onClick={() => confirmToggleActive(item)}>
-                          {busyId === item.userId ? 'Please wait…' : item.isActive ? 'Deactivate' : 'Activate'}
+                          {busyId === item.userId ? t('Please wait…') : t(item.isActive ? 'Deactivate' : 'Activate')}
                         </button>
                       </div>
                     </article>

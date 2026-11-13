@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { RASHI_OPTIONS, NAKSHATRA_OPTIONS, PADA_OPTIONS, MANGLIK_OPTIONS } from '../../utils/profileOptions.js'
 import { apiUpload } from '../../api/api.js'
+import { useLanguage } from '../../context/LanguageContext.jsx'
 
 function getTimeParts(time) {
   if (!time) return { hour: '', minute: '', period: '' }
@@ -19,6 +20,7 @@ function to24HourTime({ hour, minute, period }) {
 }
 
 export default function StepHoroscope({ value = {}, onChange, disabled, onProfileReplace }) {
+  const { t } = useLanguage()
   const set = (key) => (e) => onChange({ ...value, [key]: e.target.value })
   const [timeParts, setTimeParts] = useState(() => getTimeParts(value.timeOfBirth))
 
@@ -46,18 +48,18 @@ export default function StepHoroscope({ value = {}, onChange, disabled, onProfil
   return (
     <div className="form-grid">
       <div className="field">
-        <label htmlFor="tob-hour">Time of birth (12-hour)</label>
+        <label htmlFor="tob-hour">{t('Time of birth (12-hour)')}</label>
         <div className="height-inputs">
           <select id="tob-hour" className="form-input" aria-label="Birth hour"
             value={timeParts.hour} onChange={(e) => setTimePart('hour', e.target.value)} disabled={disabled}>
-            <option value="">Hour</option>
+            <option value="">{t('Hour')}</option>
             {Array.from({ length: 12 }, (_, index) => String(index + 1)).map((hour) => (
               <option key={hour} value={hour}>{hour}</option>
             ))}
           </select>
           <select id="tob-minute" className="form-input" aria-label="Birth minute"
             value={timeParts.minute} onChange={(e) => setTimePart('minute', e.target.value)} disabled={disabled}>
-            <option value="">Minute</option>
+            <option value="">{t('Minute')}</option>
             {Array.from({ length: 60 }, (_, minute) => String(minute).padStart(2, '0')).map((minute) => (
               <option key={minute} value={minute}>{minute}</option>
             ))}
@@ -72,58 +74,58 @@ export default function StepHoroscope({ value = {}, onChange, disabled, onProfil
       </div>
 
       <div className="field">
-        <label htmlFor="pob">Place of birth</label>
+        <label htmlFor="pob">{t('Place of birth')}</label>
         <input id="pob" className="form-input" maxLength={120}
-          placeholder="e.g. Hyderabad, Telangana"
+          placeholder={t('e.g. Hyderabad, Telangana')}
           value={value.placeOfBirth ?? ''} onChange={set('placeOfBirth')} disabled={disabled} />
       </div>
 
       <div className="field">
-        <label htmlFor="rashi">Rashi (moon sign)</label>
+        <label htmlFor="rashi">{t('Rashi (moon sign)')}</label>
         <select id="rashi" className="form-input" value={value.rashi ?? ''}
           onChange={set('rashi')} disabled={disabled}>
-          <option value="">Select rashi…</option>
+          <option value="">{t('Select rashi…')}</option>
           {RASHI_OPTIONS.map((r) => <option key={r} value={r}>{r}</option>)}
         </select>
       </div>
 
       <div className="field">
-        <label htmlFor="nakshatra">Nakshatra</label>
+        <label htmlFor="nakshatra">{t('Nakshatra')}</label>
         <select id="nakshatra" className="form-input" value={value.nakshatra ?? ''}
           onChange={set('nakshatra')} disabled={disabled}>
-          <option value="">Select nakshatra…</option>
+          <option value="">{t('Select nakshatra…')}</option>
           {NAKSHATRA_OPTIONS.map((n) => <option key={n} value={n}>{n}</option>)}
         </select>
       </div>
 
       <div className="field">
-        <label htmlFor="pada">Pada</label>
+        <label htmlFor="pada">{t('Pada')}</label>
         <select id="pada" className="form-input" value={value.pada ?? ''}
           onChange={set('pada')} disabled={disabled}>
-          <option value="">Select…</option>
+          <option value="">{t('Select…')}</option>
           {PADA_OPTIONS.map((n) => <option key={n} value={n}>{n}</option>)}
         </select>
       </div>
 
       <div className="field">
-        <label htmlFor="manglik">Manglik / Kuja dosham</label>
+        <label htmlFor="manglik">{t('Manglik / Kuja dosham')}</label>
         <select id="manglik" className="form-input" value={value.manglik ?? ''}
           onChange={set('manglik')} disabled={disabled}>
-          <option value="">Select…</option>
+          <option value="">{t('Select…')}</option>
           {MANGLIK_OPTIONS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
         </select>
       </div>
 
       <div className="field field-full">
-        <label htmlFor="graha">Graha / planet details</label>
+        <label htmlFor="graha">{t('Graha / planet details')}</label>
         <textarea id="graha" className="form-input" rows={3} maxLength={500}
-          placeholder="Optional — positions of grahas, dasha periods, etc."
+          placeholder={t('Optional — positions of grahas, dasha periods, etc.')}
           value={value.grahaDetails ?? ''} onChange={set('grahaDetails')} disabled={disabled} />
       </div>
 
       {/* kundli image */}
       <div className="field field-full">
-        <label htmlFor="kundli">Kundli image</label>
+        <label htmlFor="kundli">{t('Kundli image')}</label>
         <input
           id="kundli"
           type="file"
@@ -132,9 +134,9 @@ export default function StepHoroscope({ value = {}, onChange, disabled, onProfil
           onChange={handleKundliUpload}
           disabled={disabled}
         />
-        <span className="hint">JPG, PNG or WEBP — max 5 MB. Uploading a new one replaces the old image.</span>
+        <span className="hint">{t('JPG, PNG or WEBP — max 5 MB. Uploading a new one replaces the old image.')}</span>
         {value.kundliImageUrl && (
-          <img src={value.kundliImageUrl} alt="Kundli chart" className="kundli-preview" />
+          <img src={value.kundliImageUrl} alt={t('Kundli chart')} className="kundli-preview" />
         )}
       </div>
     </div>

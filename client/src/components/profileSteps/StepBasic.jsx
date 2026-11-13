@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useLanguage } from '../../context/LanguageContext.jsx'
 
 function heightPartsFromCm(heightCm) {
   if (!heightCm) return { feet: '', inches: '' }
@@ -16,6 +17,7 @@ function isValidHeight(feet, inches) {
 }
 
 export default function StepBasic({ value = {}, onChange, disabled }) {
+  const { t } = useLanguage()
   const set = (key) => (e) => onChange({ ...value, [key]: e.target.value })
   const [heightUnit, setHeightUnit] = useState('cm')
   const [height, setHeight] = useState(() => heightPartsFromCm(value.heightCm))
@@ -45,30 +47,30 @@ export default function StepBasic({ value = {}, onChange, disabled }) {
   return (
     <div className="form-grid">
       <div className="field">
-        <label htmlFor="pb-name">Full name</label>
+        <label htmlFor="pb-name">{t('Full name')}</label>
         <input id="pb-name" className="form-input" maxLength={80}
           value={value.name ?? ''} onChange={set('name')} disabled={disabled} />
       </div>
 
       <div className="field">
-        <label htmlFor="pb-gender">Gender</label>
+        <label htmlFor="pb-gender">{t('Gender')}</label>
         <select id="pb-gender" className="form-input" value={value.gender ?? ''}
           onChange={set('gender')} disabled={disabled}>
-          <option value="">Select…</option>
+          <option value="">{t('Select…')}</option>
           <option value="male">Male</option>
           <option value="female">Female</option>
         </select>
       </div>
 
       <div className="field">
-        <label htmlFor="pb-dob">Date of birth</label>
+        <label htmlFor="pb-dob">{t('Date of birth')}</label>
         <input id="pb-dob" type="date" className="form-input" min={minDate} max={maxDate}
           value={value.dateOfBirth ?? ''} onChange={set('dateOfBirth')} disabled={disabled} />
-        <span className="hint">Minimum age to register is 18 years.</span>
+        <span className="hint">{t('Minimum age to register is 18 years.')}</span>
       </div>
 
       <div className="field">
-        <label htmlFor="pb-height-unit">Height</label>
+        <label htmlFor="pb-height-unit">{t('Height')}</label>
         <select id="pb-height-unit" className="form-input" value={heightUnit}
           onChange={(e) => changeHeightUnit(e.target.value)} disabled={disabled}>
           <option value="cm">Centimeters (cm)</option>
@@ -77,8 +79,8 @@ export default function StepBasic({ value = {}, onChange, disabled }) {
         {heightUnit === 'cm' ? (
           <>
             <input id="pb-height-cm" type="number" className="form-input" min={100} max={250}
-              placeholder="e.g. 168" value={value.heightCm ?? ''} onChange={set('heightCm')} disabled={disabled} />
-            <span className="hint">100 – 250 cm</span>
+              placeholder={t('e.g. 168')} value={value.heightCm ?? ''} onChange={set('heightCm')} disabled={disabled} />
+            <span className="hint">{t('100 – 250 cm')}</span>
           </>
         ) : (
           <>
@@ -104,23 +106,23 @@ export default function StepBasic({ value = {}, onChange, disabled }) {
                 ))}
               </select>
             </div>
-            <span className="hint">Choose a height between 3 ft 4 in and 8 ft 2 in.</span>
+            <span className="hint">{t('Choose a height between 3 ft 4 in and 8 ft 2 in.')}</span>
           </>
         )}
       </div>
 
       <div className="field">
-        <label htmlFor="pb-weight">Weight (kg)</label>
+        <label htmlFor="pb-weight">{t('Weight (kg)')}</label>
         <input id="pb-weight" type="number" className="form-input" min={30} max={200}
-          placeholder="e.g. 62" value={value.weightKg ?? ''} onChange={set('weightKg')} disabled={disabled} />
-        <span className="hint">30 – 200</span>
+          placeholder={t('e.g. 62')} value={value.weightKg ?? ''} onChange={set('weightKg')} disabled={disabled} />
+        <span className="hint">{t('30 – 200')}</span>
       </div>
 
       <div className="field">
-        <label htmlFor="pb-marital">Marital status</label>
+        <label htmlFor="pb-marital">{t('Marital status')}</label>
         <select id="pb-marital" className="form-input" value={value.maritalStatus ?? ''}
           onChange={set('maritalStatus')} disabled={disabled}>
-          <option value="">Select…</option>
+          <option value="">{t('Select…')}</option>
           <option value="never_married">Never married</option>
           <option value="divorced">Divorced</option>
           <option value="widowed">Widowed</option>
@@ -129,7 +131,7 @@ export default function StepBasic({ value = {}, onChange, disabled }) {
       </div>
 
       <div className="field">
-        <label htmlFor="pb-tongue">Mother tongue</label>
+        <label htmlFor="pb-tongue">{t('Mother tongue')}</label>
         <input id="pb-tongue" className="form-input" list="tongues" maxLength={40}
           value={value.motherTongue ?? ''} onChange={set('motherTongue')} disabled={disabled} />
         <datalist id="tongues">
@@ -139,9 +141,9 @@ export default function StepBasic({ value = {}, onChange, disabled }) {
       </div>
 
       <div className="field field-full">
-        <label htmlFor="pb-about">About me</label>
+        <label htmlFor="pb-about">{t('About me')}</label>
         <textarea id="pb-about" className="form-input" rows={4} maxLength={1200}
-          placeholder="Describe yourself, your family background, expectations…"
+          placeholder={t('Describe yourself, your family background, expectations…')}
           value={value.aboutMe ?? ''} onChange={set('aboutMe')} disabled={disabled} />
       </div>
     </div>

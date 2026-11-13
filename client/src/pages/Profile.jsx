@@ -13,6 +13,7 @@ import { SUBMIT_MIN_PERCENT } from '../utils/profileOptions.js'
 import { calculateProfileCompletion } from '../utils/profileCompletion.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import ProfileTimeline from '../components/ProfileTimeline.jsx'
+import { useLanguage } from '../context/LanguageContext.jsx'
 
 const STEPS = [
   { key: 'basic', title: 'Basic', Component: StepBasic, saveable: true },
@@ -35,6 +36,7 @@ const STATUS_MESSAGES = {
 
 export default function Profile() {
   const { user } = useAuth()
+  const { t } = useLanguage()
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
@@ -104,17 +106,17 @@ export default function Profile() {
   const readOnly = profile && ['pending_approval', 'approved'].includes(profile.status)
 
   if (loading) {
-    return <div className="page-loading">Loading your profile…</div>
+    return <div className="page-loading">{t('Loading your profile…')}</div>
   }
 
   if (loadError) {
     return (
       <div className="dashboard-page">
         <div className="dashboard-card">
-          <h1 className="dashboard-title">Profile</h1>
+          <h1 className="dashboard-title">{t('Profile')}</h1>
           <p className="form-error">{loadError}</p>
           <p className="auth-switch">
-            <button type="button" className="btn btn-outline" onClick={loadProfile}>Try again</button>
+            <button type="button" className="btn btn-outline" onClick={loadProfile}>{t('Try again')}</button>
           </p>
         </div>
       </div>
@@ -154,7 +156,7 @@ export default function Profile() {
     setSaving(true)
     try {
       await api('/profile/submit', { method: 'POST', body: {} })
-      toast.success('Profile submitted for approval!')
+      toast.success(t('Profile submitted for approval!'))
       await loadProfile()
     } catch (err) {
       toast.error(err.message)
@@ -220,7 +222,7 @@ export default function Profile() {
           <>
             <div className="profile-topbar-row">
               <span className="profile-step-label">
-                Step {step + 1} of {STEPS.length} — {current.title}
+                {t('Step')} {step + 1} {t('of')} {STEPS.length} — {t(current.title)}
               </span>
               <span className={`status-chip status-chip--${profile.status}`}>
                 {profile.status === 'draft' && 'Draft'}
@@ -230,8 +232,8 @@ export default function Profile() {
             </div>
 
             <div className="profile-progress-row">
-              <span>Profile completion</span>
-              <span><strong>{percent}%</strong> (need {SUBMIT_MIN_PERCENT}% to submit)</span>
+              <span>{t('Profile completion')}</span>
+              <span><strong>{percent}%</strong> ({t('need')} {SUBMIT_MIN_PERCENT}% {t('to submit')})</span>
             </div>
             <div className="profile-progress" role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}>
               <div className="profile-progress-fill" style={{ width: `${percent}%` }} />
@@ -254,12 +256,12 @@ export default function Profile() {
       )}
       {/* step content */}
       <div className="wizard-card">
-        <h2 className="wizard-title">{current.title}</h2>
+        <h2 className="wizard-title">{t(current.title)}</h2>
         {current.key === 'photos' && (
-          <p className="wizard-sub">First photo you add becomes your profile photo.</p>
+          <p className="wizard-sub">{t('First photo you add becomes your profile photo.')}</p>
         )}
         {current.key === 'review' && (
-          <p className="wizard-sub">Check every section, then submit.</p>
+          <p className="wizard-sub">{t('Check every section, then submit.')}</p>
         )}
 
         {current.key === 'photos' ? (
@@ -294,7 +296,7 @@ export default function Profile() {
           <div className="left">
             {step > 0 && (
               <button type="button" className="btn btn-outline" onClick={() => goTo(step - 1)}>
-                Back
+                {t('Back')}
               </button>
             )}
           </div>
@@ -307,10 +309,10 @@ export default function Profile() {
                 onClick={continueFromStep}
               >
                 {saving
-                  ? 'Saving…'
+                  ? t('Saving…')
                   : editingSection === current.key
-                    ? current.saveable ? 'Save & Return to Review' : 'Return to Review'
-                    : current.saveable && !readOnly ? 'Save & Continue' : 'Continue'}
+                    ? current.saveable ? t('Save & Return to Review') : t('Return to Review')
+                    : current.saveable && !readOnly ? t('Save & Continue') : t('Continue')}
               </button>
             )}
           </div>

@@ -5,20 +5,23 @@ import { formatSiblingDetails } from '../../utils/family.js'
 import ConfirmDialog from '../../components/admin/ConfirmDialog.jsx'
 import PhotoPreview from '../../components/admin/PhotoPreview.jsx'
 import ProfileTimeline from '../../components/ProfileTimeline.jsx'
+import { useLanguage } from '../../context/LanguageContext.jsx'
 
 function ReviewGroup({ title, children }) {
+  const { t } = useLanguage()
   return (
     <div className="review-group">
-      <h4>{title}</h4>
+      <h4>{t(title)}</h4>
       <div className="review-list">{children}</div>
     </div>
   )
 }
 
 function Row({ k, v }) {
+  const { t } = useLanguage()
   const text = v === null || v === undefined || v === '' ? '—'
     : typeof v === 'boolean' ? (v ? 'Yes' : 'No') : String(v)
-  return <div><span className="k">{k}</span><span className="v">{text}</span></div>
+  return <div><span className="k">{t(k)}</span><span className="v">{text}</span></div>
 }
 
 function fmtDate(v) {
@@ -27,6 +30,7 @@ function fmtDate(v) {
 }
 
 export default function AdminProfileDetailPage() {
+  const { t } = useLanguage()
   const { userId } = useParams()
   const navigate = useNavigate()
 
@@ -62,7 +66,7 @@ export default function AdminProfileDetailPage() {
     setBusy(true)
     try {
       const data = await api(`/admin/profiles/${userId}/approve`, { method: 'POST' })
-      toast.success(data.message || 'Profile approved.')
+      toast.success(data.message || t('Profile approved.'))
       await load()
     } catch (err) {
       toast.error(err.message)
@@ -73,7 +77,7 @@ export default function AdminProfileDetailPage() {
 
   const doReject = async () => {
     if (reason.trim().length < 5) {
-      toast.error('Give a reason of at least 5 characters.')
+      toast.error(t('Give a reason of at least 5 characters.'))
       return
     }
     setConfirmation(null)
@@ -83,7 +87,7 @@ export default function AdminProfileDetailPage() {
         method: 'POST',
         body: { reason: reason.trim() },
       })
-      toast.success(data.message || 'Profile rejected.')
+      toast.success(data.message || t('Profile rejected.'))
       setReason('')
       setShowRejectBox(false)
       await load()
@@ -97,7 +101,7 @@ export default function AdminProfileDetailPage() {
   const sendPaymentRequest = async (event) => {
     event.preventDefault()
     if (!paymentQr) {
-      toast.error('Choose the payment QR/scanner image.')
+      toast.error(t('Choose the payment QR/scanner image.'))
       return
     }
 
@@ -107,7 +111,7 @@ export default function AdminProfileDetailPage() {
         file: paymentQr,
         fields: { amount: paymentAmount },
       })
-      toast.success(data.message || 'Payment request sent.')
+      toast.success(data.message || t('Payment request sent.'))
       setPaymentQr(null)
       setPaymentInputKey((key) => key + 1)
       setPaymentAmount('')
@@ -123,7 +127,7 @@ export default function AdminProfileDetailPage() {
     setPaymentBusy(true)
     try {
       const data = await api(`/admin/payments/${payment.id}/verify`, { method: 'POST' })
-      toast.success(data.message || 'Payment verified.')
+      toast.success(data.message || t('Payment verified.'))
       await load()
     } catch (err) {
       toast.error(err.message)
@@ -132,12 +136,12 @@ export default function AdminProfileDetailPage() {
     }
   }
 
-  if (loading) return <div className="page-loading">Loading profile…</div>
+  if (loading) return <div className="page-loading">{t('Loading profile…')}</div>
   if (error) {
     return (
       <div className="dashboard-card">
         <p className="form-error">{error}</p>
-        <Link to="/admin/profiles" className="btn btn-outline">← Back to list</Link>
+        <Link to="/admin/profiles" className="btn btn-outline">← {t('Back to list')}</Link>
       </div>
     )
   }
@@ -152,7 +156,7 @@ export default function AdminProfileDetailPage() {
         <div>
           <h1 className="dashboard-title" style={{ marginBottom: 4 }}>{profile.basic?.name || 'Profile'}</h1>
         </div>
-        <Link to="/admin/profiles" className="btn btn-outline btn-sm">← Back to list</Link>
+        <Link to="/admin/profiles" className="btn btn-outline btn-sm">← {t('Back to list')}</Link>
       </div>
 
       {/* account box */}
@@ -167,7 +171,7 @@ export default function AdminProfileDetailPage() {
         </div>
         {profile.status === 'rejected' && profile.rejectionReason && (
           <p style={{ marginTop: 10, color: 'var(--error)', fontWeight: 600 }}>
-            Rejection reason: {profile.rejectionReason}
+            {t('Rejection reason')}: {profile.rejectionReason}
           </p>
         )}
       </div>
@@ -189,12 +193,12 @@ export default function AdminProfileDetailPage() {
             <div className="admin-photo-strip">
               {photos.map((p) => <PhotoPreview key={p.id} src={p.url} alt="Profile photo" />)}
             </div>
-          ) : <Row k="Photos" v="No photos uploaded" />}
+          ) : <Row k="Photos" v={t('No photos uploaded')} />}
         </ReviewGroup>
 
         {/* contact details */}
         <div className="admin-contact-box">
-          <h4>Contact details (private — admin and assigned match only)</h4>
+          <h4>{t('Contact details (private — admin and assigned match only)')}</h4>
           <div className="review-list">
             <Row k="Mobile" v={profile.contact?.mobile} />
             <Row k="WhatsApp" v={profile.contact?.whatsapp} />
@@ -279,70 +283,70 @@ export default function AdminProfileDetailPage() {
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <button type="button" className="btn btn-primary" disabled={!canApprove || busy}
             onClick={() => setConfirmation({
-              title: 'Approve profile?',
-              message: 'The user will be notified that their profile is approved. They become eligible for an admin-assigned match after payment is verified.',
-              confirmLabel: 'Approve',
+              title: t('Approve profile?'),
+              message: t('The user will be notified that their profile is approved. They become eligible for an admin-assigned match after payment is verified.'),
+              confirmLabel: t('Approve'),
               action: doApprove,
             })}>
-            {profile.status === 'approved' ? 'Already approved' : profile.status === 'draft' ? 'Not submitted yet' : 'Approve'}
+            {t(profile.status === 'approved' ? 'Already approved' : profile.status === 'draft' ? 'Not submitted yet' : 'Approve')}
           </button>
           <button type="button" className="btn btn-danger" disabled={profile.status !== 'pending_approval' || busy}
             onClick={() => setShowRejectBox(true)}>
-            Reject with reason
+            {t('Reject with reason')}
           </button>
         </div>
 
         {profile.status === 'approved' && profile.paymentRequired && !payment && (
           <form className="reject-box" onSubmit={sendPaymentRequest}>
-            <h3 style={{ margin: '0 0 8px' }}>Send membership payment request</h3>
+            <h3 style={{ margin: '0 0 8px' }}>{t('Send membership payment request')}</h3>
             <p style={{ margin: '0 0 10px', fontSize: 13 }}>
-              The member is not eligible for an admin-assigned match until payment is verified.
+              {t('The member is not eligible for an admin-assigned match until payment is verified.')}
             </p>
-            <label className="form-label" htmlFor="membership-amount">Amount (INR)</label>
+            <label className="form-label" htmlFor="membership-amount">{t('Amount (INR)')}</label>
             <input id="membership-amount" className="form-input" type="number" min="1" step="0.01"
               required value={paymentAmount} onChange={(event) => setPaymentAmount(event.target.value)} />
-            <label className="form-label" htmlFor="membership-qr">Payment QR/scanner image</label>
+            <label className="form-label" htmlFor="membership-qr">{t('Payment QR/scanner image')}</label>
             <input key={paymentInputKey} id="membership-qr" className="form-input" type="file" accept="image/jpeg,image/png,image/webp"
               required onChange={(event) => setPaymentQr(event.target.files?.[0] ?? null)} />
             <button type="submit" className="btn btn-primary" disabled={paymentBusy} style={{ marginTop: 12 }}>
-              {paymentBusy ? 'Sending…' : 'Send payment request'}
+              {paymentBusy ? t('Sending…') : t('Send payment request')}
             </button>
           </form>
         )}
         {profile.status === 'approved' && profile.paymentRequired && payment?.status === 'verified' && (
           <div className="reject-box">
-            <p style={{ margin: '0 0 10px' }}>Payment is verified; retry activating assignment eligibility if the previous update failed.</p>
+            <p style={{ margin: '0 0 10px' }}>{t('Payment is verified; retry activating assignment eligibility if the previous update failed.')}</p>
             <button type="button" className="btn btn-primary" disabled={paymentBusy} onClick={retryPaymentUnlock}>
-              {paymentBusy ? 'Please wait…' : 'Retry payment activation'}
+              {paymentBusy ? t('Please wait…') : t('Retry payment activation')}
             </button>
           </div>
         )}
 
         {showRejectBox && (
           <div className="reject-box">
-            <label htmlFor="reject-reason" style={{ fontWeight: 700, fontSize: 14 }}>Reason (shown to the user)</label>
+            <label htmlFor="reject-reason" style={{ fontWeight: 700, fontSize: 14 }}>{t('Reason (shown to the user)')}</label>
             <textarea id="reject-reason" className="form-input" rows={3} maxLength={500}
-              placeholder="e.g. About me is missing — write at least 3 sentences about yourself."
+              placeholder={t('e.g. About me is missing — write at least 3 sentences about yourself.')}
               value={reason} onChange={(e) => setReason(e.target.value)} />
             <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
               <button type="button" className="btn btn-danger btn-sm" disabled={busy} onClick={() => {
                 if (reason.trim().length < 5) {
-                  toast.error('Give a reason of at least 5 characters.')
+                  toast.error(t('Give a reason of at least 5 characters.'))
                   return
                 }
                 setConfirmation({
-                  title: 'Reject profile?',
-                  message: 'The user will be notified and will see the reason you provided.',
-                  confirmLabel: 'Reject profile',
+                  title: t('Reject profile?'),
+                  message: t('The user will be notified and will see the reason you provided.'),
+                  confirmLabel: t('Reject profile'),
                   danger: true,
                   action: doReject,
                 })
               }}>
-                {busy ? 'Please wait…' : 'Confirm rejection'}
+                {busy ? t('Please wait…') : t('Confirm rejection')}
               </button>
               <button type="button" className="btn btn-outline btn-sm" disabled={busy}
                 onClick={() => setShowRejectBox(false)}>
-                Cancel
+                {t('Cancel')}
               </button>
             </div>
           </div>

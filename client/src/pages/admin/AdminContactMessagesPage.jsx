@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api, toast } from '../../api/api.js'
+import { useLanguage } from '../../context/LanguageContext.jsx'
 
 const TABS = [
   { value: 'open', label: 'Open' },
@@ -13,6 +14,7 @@ function fmt(v) {
 }
 
 export default function AdminContactMessagesPage() {
+  const { t } = useLanguage()
   const [tab, setTab] = useState('open')
   const [items, setItems] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -84,21 +86,21 @@ export default function AdminContactMessagesPage() {
   return (
     <div>
       <div className="admin-section-header">
-        <h1>Contact Messages</h1>
-        <p>Messages sent by visitors through the <strong>Contact Us</strong> page. Reply to visitors directly by email.</p>
+        <h1>{t('Contact Messages')}</h1>
+        <p>{t('Messages sent by visitors through the')} <strong>{t('Contact Us')}</strong> {t('page. Reply to visitors directly by email.')}</p>
       </div>
 
-      <div className="admin-tab-bar" role="tablist" aria-label="Contact messages tabs">
-        {TABS.map((t) => (
+      <div className="admin-tab-bar" role="tablist" aria-label={t('Contact messages tabs')}>
+        {TABS.map((tabItem) => (
           <button
-            key={t.value}
+            key={tabItem.value}
             type="button"
             role="tab"
-            aria-selected={tab === t.value}
-            className={`admin-tab ${tab === t.value ? 'admin-tab--active' : ''}`}
-            onClick={() => setTab(t.value)}
+            aria-selected={tab === tabItem.value}
+            className={`admin-tab ${tab === tabItem.value ? 'admin-tab--active' : ''}`}
+            onClick={() => setTab(tabItem.value)}
           >
-            {t.label}
+            {t(tabItem.label)}
           </button>
         ))}
       </div>
@@ -107,7 +109,7 @@ export default function AdminContactMessagesPage() {
       {error && <p className="form-error">{error}</p>}
 
       {!loading && !error && (items || []).length === 0 && (
-        <div className="notifications-empty">No {tab === 'all' ? '' : tab + ' '}messages.</div>
+        <div className="notifications-empty">{t('No messages in this tab.')}</div>
       )}
 
       <div className="admin-list">
@@ -116,7 +118,7 @@ export default function AdminContactMessagesPage() {
             <div className="contact-message-row-main">
               <div className="admin-item-name">
                 {m.name}
-                {!m.is_handled && <span className="inactive-tag" style={{ marginLeft: 8 }}>New</span>}
+                {!m.is_handled && <span className="inactive-tag" style={{ marginLeft: 8 }}>{t('New')}</span>}
               </div>
               <div className="admin-item-mail">
                 ✉ {m.email}{m.phone ? ` • ☎ ${m.phone}` : ''}
@@ -124,22 +126,22 @@ export default function AdminContactMessagesPage() {
               {m.subject && <div style={{ fontSize: 14, fontWeight: 600, marginTop: 6 }}>{m.subject}</div>}
               <div style={{ fontSize: 14, marginTop: 4, whiteSpace: 'pre-wrap' }}>{m.message}</div>
               <div className="admin-item-meta" style={{ marginTop: 6 }}>
-                <span>Sent: {fmt(m.created_at)}</span>
+                <span>{t('Sent')}: {fmt(m.created_at)}</span>
                 <span className={m.is_handled ? 'status-chip status-chip--approved' : 'status-chip status-chip--pending_approval'}>
                   {m.is_handled ? 'handled' : 'open'}
                 </span>
               </div>
               {(m.replies || []).length > 0 && (
                 <div className="contact-reply-history">
-                  <h3>Email replies</h3>
+                  <h3>{t('Email replies')}</h3>
                   {m.replies.map((reply) => (
                     <div className="contact-reply-history-item" key={reply.id}>
                       <div className="admin-item-meta">
                         <span className={`status-chip ${reply.status === 'sent' ? 'status-chip--approved' : 'status-chip--pending_approval'}`}>
                           {reply.status === 'sent' ? 'sent' : reply.status === 'failed' ? 'failed' : 'sending'}
                         </span>
-                        <span>{reply.status === 'sent' ? 'Sent' : 'Attempted'}: {fmt(reply.sent_at || reply.created_at)}</span>
-                        <span>Email: {reply.recipient_email}</span>
+                        <span>{t(reply.status === 'sent' ? 'Sent' : 'Attempted')}: {fmt(reply.sent_at || reply.created_at)}</span>
+                        <span>{t('Email')}: {reply.recipient_email}</span>
                       </div>
                       <div className="contact-reply-history-content">{reply.response}</div>
                     </div>
@@ -148,7 +150,7 @@ export default function AdminContactMessagesPage() {
               )}
               {m.email && (
                 <form className="contact-reply-form" onSubmit={(event) => sendReply(event, m)}>
-                  <label htmlFor={`reply-${m.id}`}>Email reply</label>
+                  <label htmlFor={`reply-${m.id}`}>{t('Email reply')}</label>
                   <textarea
                     id={`reply-${m.id}`}
                     className="form-input"
@@ -163,7 +165,7 @@ export default function AdminContactMessagesPage() {
                   />
                   <button type="submit" className="btn btn-primary btn-sm"
                     disabled={replyingId === m.id}>
-                    {replyingId === m.id ? 'Sending…' : 'Send email reply'}
+                    {replyingId === m.id ? t('Sending…') : t('Send email reply')}
                   </button>
                 </form>
               )}
@@ -172,7 +174,7 @@ export default function AdminContactMessagesPage() {
               <button type="button" className={`btn btn-sm ${m.is_handled ? 'btn-outline' : 'btn-primary'}`}
                 disabled={busyId === m.id}
                 onClick={() => toggleHandled(m)}>
-                {busyId === m.id ? 'Please wait…' : m.is_handled ? 'Reopen' : 'Mark handled'}
+                {busyId === m.id ? t('Please wait…') : t(m.is_handled ? 'Reopen' : 'Mark handled')}
               </button>
             </div>
           </div>

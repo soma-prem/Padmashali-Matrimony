@@ -3,7 +3,9 @@ import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { api, toast } from '../api/api.js'
 import NotificationBell from './NotificationBell.jsx'
+import LanguageToggle from './LanguageToggle.jsx'
 import { useAdminStats } from '../context/AdminStatsContext.jsx'
+import { useLanguage } from '../context/LanguageContext.jsx'
 
 const PUBLIC_LINKS = [
   { to: '/', label: 'Home', icon: 'home', end: true },
@@ -33,6 +35,7 @@ const ADMIN_LINKS = [
 
 export default function Navbar() {
   const { user, isAdmin, logout } = useAuth()
+  const { t } = useLanguage()
   const navigate = useNavigate()
   const location = useLocation()
   const [open, setOpen] = useState(false)
@@ -44,7 +47,7 @@ export default function Navbar() {
   const close = () => setOpen(false)
   const isPublicHome = !user && !isAdmin && location.pathname === '/'
   const links = isAdmin ? ADMIN_LINKS : user ? USER_LINKS : PUBLIC_LINKS
-  const sectionLabel = isAdmin ? 'Administration' : user ? 'Your space' : 'Explore'
+  const sectionLabel = t(isAdmin ? 'Administration' : user ? 'Your space' : 'Explore')
 
   useEffect(() => {
     if (!user || isAdmin) {
@@ -112,6 +115,7 @@ export default function Navbar() {
         <Link to="/" className="sidebar-mobile-brand" onClick={close} aria-label="Padmashali Matrimony home">
           <img src="/logo.png" alt="Padmashali Matrimony" />
         </Link>
+        <LanguageToggle />
       </div>}
 
       {!isPublicHome && open && <button type="button" className="sidebar-scrim" aria-label="Close navigation menu" onClick={close} />}
@@ -120,10 +124,12 @@ export default function Navbar() {
         <Link to="/" className="navbar-brand" onClick={close}>
           <img src="/logo.png" alt="Padmashali Matrimony" />
         </Link>
+        <div className="sidebar-language-toggle"><LanguageToggle /></div>
 
         <nav className="sidebar-navigation" aria-label="Main navigation">
           <p className="sidebar-section-label">{sectionLabel}</p>
           {links.map(({ to, label, icon, end, countKey, requiresApproval }) => {
+            const translatedLabel = t(label)
             const disabled = !isAdmin && requiresApproval && accessChecked && !profileApproved
             const pendingCheck = !isAdmin && requiresApproval && !accessChecked
             const count = countKey === 'openMessages'
@@ -142,11 +148,11 @@ export default function Navbar() {
                   key={to}
                   className="nav-link nav-link--disabled"
                   title="Get your profile verified by admin"
-                  aria-label={`${label} — get your profile verified by admin`}
+                  aria-label={`${translatedLabel} — get your profile verified by admin`}
                 >
                   {iconMarkup}
-                  <span>{label}</span>
-                  <span className="nav-link-tooltip">Get your profile verified by admin</span>
+                  <span>{translatedLabel}</span>
+                  <span className="nav-link-tooltip">{t('Get your profile verified by admin')}</span>
                 </span>
               )
             }
@@ -157,11 +163,11 @@ export default function Navbar() {
                 to={to}
                 end={end}
                 className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
-                aria-label={label}
+                aria-label={translatedLabel}
                 onClick={close}
               >
                 {iconMarkup}
-                <span>{label}</span>
+                <span>{translatedLabel}</span>
                 {countKey && count !== null && count !== undefined && (
                   <span className="sidebar-count" aria-label={`${count} records`}>
                     {count}
@@ -180,9 +186,9 @@ export default function Navbar() {
             </div>
             <div className="sidebar-user-details">
               <strong>{user.name || 'Your account'}</strong>
-              <span>{isAdmin ? 'Administrator' : 'Member'}</span>
+              <span>{t(isAdmin ? 'Administrator' : 'Member')}</span>
             </div>
-            <button type="button" className="sidebar-logout" onClick={handleLogout} aria-label="Log out" title="Log out">
+            <button type="button" className="sidebar-logout" onClick={handleLogout} aria-label={t('Logout')} title={t('Logout')}>
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M10 17l5-5-5-5" />
                 <path d="M15 12H3" />

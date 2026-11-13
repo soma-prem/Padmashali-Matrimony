@@ -38,12 +38,39 @@
   flex: 0 0 auto;
 }
 
+.sidebar-language-toggle {
+  display: flex;
+  justify-content: flex-end;
+  margin: 4px 0 8px;
+}
+
+.language-toggle {
+  min-width: 76px;
+  min-height: 36px;
+  padding: 6px 12px;
+  color: var(--primary);
+  background: #f5eae0;
+  border: 1px solid #eadccc;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.language-toggle:hover {
+  background: #efe0d2;
+}
+
 .sidebar-mobile-brand {
   display: block;
   width: 145px;
   height: 62px;
   overflow: hidden;
   border-radius: 6px;
+}
+
+.sidebar-mobile-bar > .language-toggle {
+  margin-left: auto;
 }
 
 .sidebar-mobile-brand img {

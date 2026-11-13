@@ -259,7 +259,7 @@ export async function getFullProfile(req, res, next) {
 }
 
 // ---------------------------------------------------------------------------
-// GET /api/admin/assignments/:userId — current exclusive assigned match
+// GET /api/admin/assignments/:userId — all assigned profiles for one user
 // ---------------------------------------------------------------------------
 export async function getProfileAssignment(req, res, next) {
   try {
@@ -268,21 +268,20 @@ export async function getProfileAssignment(req, res, next) {
       throw new AppError('Invalid user id.', 400)
     }
 
-    const { data: assignment, error } = await supabase
+    const { data: assignments, error } = await supabase
       .from('profile_assignments')
       .select('bride_user_id, groom_user_id')
       .or(`bride_user_id.eq.${userId},groom_user_id.eq.${userId}`)
-      .maybeSingle()
     if (error) throw error
 
-    const partnerId = assignment
-      ? assignment.bride_user_id === userId ? assignment.groom_user_id : assignment.bride_user_id
-      : null
-    const summaries = partnerId ? await userSummaries([partnerId]) : {}
+    const partnerIds = [...new Set((assignments || []).map((assignment) =>
+      assignment.bride_user_id === userId ? assignment.groom_user_id : assignment.bride_user_id
+    ))]
+    const summaries = await userSummaries(partnerIds)
 
     res.json({
       success: true,
-      data: { assignedProfile: partnerId ? summaries[partnerId] ?? null : null },
+      data: { assignedProfiles: partnerIds.map((partnerId) => summaries[partnerId]).filter(Boolean) },
     })
   } catch (err) {
     next(err)
@@ -290,7 +289,7 @@ export async function getProfileAssignment(req, res, next) {
 }
 
 // ---------------------------------------------------------------------------
-// POST /api/admin/assignments — replace assignments for both selected users
+// POST /api/admin/assignments — add an assignment for both selected users
 // ---------------------------------------------------------------------------
 export async function assignProfilePair(req, res, next) {
   try {
@@ -487,7 +486,7 @@ const ageFromDob = (dob) => {
 }
 
 /**
- * Compact per-user summary used for the current assigned match.
+ * Compact per-user summaries used for assigned matches.
  * Returns { [userId]: summary }.
  */
 async function userSummaries(userIds) {

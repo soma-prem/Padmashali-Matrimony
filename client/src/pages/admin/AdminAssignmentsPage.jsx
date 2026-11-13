@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { api } from '../../api/api.js'
 import AdminPagination from '../../components/admin/AdminPagination.jsx'
 import PhotoPreview from '../../components/admin/PhotoPreview.jsx'
+import { useLanguage } from '../../context/LanguageContext.jsx'
 
 function initials(name = '') {
   return name.trim().slice(0, 1).toUpperCase() || '?'
@@ -25,6 +26,7 @@ function ProfileAvatar({ profile }) {
 }
 
 export default function AdminAssignmentsPage() {
+  const { t } = useLanguage()
   const [profiles, setProfiles] = useState([])
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
@@ -41,7 +43,7 @@ export default function AdminAssignmentsPage() {
   const [candidateTotalPages, setCandidateTotalPages] = useState(1)
   const [candidateLoading, setCandidateLoading] = useState(false)
   const [candidateError, setCandidateError] = useState('')
-  const [assignedProfile, setAssignedProfile] = useState(null)
+  const [assignedProfiles, setAssignedProfiles] = useState([])
   const [chosenCandidate, setChosenCandidate] = useState(null)
   const [saving, setSaving] = useState(false)
   const [notice, setNotice] = useState('')
@@ -104,7 +106,7 @@ export default function AdminAssignmentsPage() {
         if (!cancelled) {
           setCandidates(profileResponse.data.items)
           setCandidateTotalPages(profileResponse.data.totalPages)
-          setAssignedProfile(assignmentResponse.data.assignedProfile)
+          setAssignedProfiles(assignmentResponse.data.assignedProfiles || [])
         }
       } catch (err) {
         if (!cancelled) setCandidateError(err.message)
@@ -122,7 +124,7 @@ export default function AdminAssignmentsPage() {
     setCandidateSearchInput('')
     setCandidateSearch('')
     setCandidatePage(1)
-    setAssignedProfile(null)
+    setAssignedProfiles([])
     setChosenCandidate(null)
     setNotice('')
   }
@@ -150,9 +152,11 @@ export default function AdminAssignmentsPage() {
         method: 'POST',
         body: { brideUserId, groomUserId },
       })
-      setAssignedProfile(chosenCandidate)
+      setAssignedProfiles((current) => current.some((profile) => profile.userId === chosenCandidate.userId)
+        ? current
+        : [...current, chosenCandidate])
       setChosenCandidate(null)
-      setNotice('Assignment saved. The assigned profile will appear in both users’ Assigned matches.')
+      setNotice(t('Assignment saved. Both users can now see this profile in Assigned matches.'))
     } catch (err) {
       setCandidateError(err.message)
     } finally {
@@ -162,23 +166,23 @@ export default function AdminAssignmentsPage() {
 
   return (
     <div>
-      <h1 className="dashboard-title" style={{ marginBottom: 8 }}>Assign users</h1>
-      <p className="page-description">Choose a profile, then assign one profile of the opposite gender. Each user can have one assigned match; assigning again replaces any existing pair for either selected profile.</p>
+      <h1 className="dashboard-title" style={{ marginBottom: 8 }}>{t('Assign users')}</h1>
+      <p className="page-description">{t('Choose a profile and assign one or more eligible profiles of the opposite gender. You can add profiles one at a time; existing assignments are kept.')}</p>
 
       <div className="admin-filters">
         <input
           className="form-input search"
-          placeholder="Search name or email…"
-          aria-label="Search profiles by name or email"
+          placeholder={t('Search name or email…')}
+          aria-label={t('Search profiles by name or email')}
           value={searchInput}
           onChange={(event) => setSearchInput(event.target.value)}
         />
       </div>
 
       {error && <p className="form-error">{error}</p>}
-      {loading && <div className="page-loading">Loading profiles…</div>}
+      {loading && <div className="page-loading">{t('Loading profiles…')}</div>}
       {!loading && !error && profiles.length === 0 && (
-        <div className="notifications-empty">No profiles match your search.</div>
+        <div className="notifications-empty">{t('No profiles match your search.')}</div>
       )}
 
       <div className="admin-list">
@@ -190,8 +194,8 @@ export default function AdminAssignmentsPage() {
               <div className="admin-item-mail">{profile.accountEmail}</div>
               <div className="admin-item-meta">
                 {statusChip(profile.status)}
-                {profile.gender && <span>{profile.gender === 'male' ? '♂ Groom' : '♀ Bride'}</span>}
-                <span>Payment: {profile.paymentStatus || 'not verified'}</span>
+                {profile.gender && <span>{profile.gender === 'male' ? `♂ ${t('Groom')}` : `♀ ${t('Bride')}`}</span>}
+                <span>{t('Payment')}: {profile.paymentStatus || 'not verified'}</span>
                 {profile.age && <span>{profile.age} yrs</span>}
                 {profile.city && <span>{profile.city}</span>}
               </div>
@@ -203,10 +207,10 @@ export default function AdminAssignmentsPage() {
                 disabled={!profile.gender || !canAssign(profile)}
                 onClick={() => openAssignment(profile)}
               >
-                Assign
+                {t('Assign')}
               </button>
               {!canAssign(profile) && (
-                <small className="admin-item-mail">Requires an active, approved profile with verified payment.</small>
+                <small className="admin-item-mail">{t('Requires an active, approved profile with verified payment.')}</small>
               )}
             </div>
           </article>
@@ -222,40 +226,46 @@ export default function AdminAssignmentsPage() {
           if (event.target === event.currentTarget) closeAssignment()
         }}>
           <section className="admin-confirm-dialog admin-assignment-dialog" role="dialog" aria-modal="true" aria-labelledby="assignment-title">
-            <h2 id="assignment-title">Assign a {selectedProfile.gender === 'female' ? 'groom' : 'bride'} profile</h2>
+            <h2 id="assignment-title">{t('Assign a')} {t(selectedProfile.gender === 'female' ? 'groom' : 'bride')} {t('profile')}</h2>
             <p>
-              Selected profile: <strong>{selectedProfile.name}</strong>
-              {assignedProfile && <> · Currently assigned to <strong>{assignedProfile.name}</strong></>}
+              {t('Selected profile:')} <strong>{selectedProfile.name}</strong>
             </p>
+            {assignedProfiles.length > 0 && (
+              <p>
+                {t('Currently assigned profiles')} ({assignedProfiles.length}):{' '}
+                <strong>{assignedProfiles.map((profile) => profile.name).join(', ')}</strong>
+              </p>
+            )}
 
             {notice && <p className="assignment-notice" role="status">{notice}</p>}
 
             <label className="admin-assignment-search">
-              <span>Search {selectedProfile.gender === 'female' ? 'groom' : 'bride'} profiles</span>
+              <span>{t('Search')} {t(selectedProfile.gender === 'female' ? 'groom' : 'bride')} {t('profiles')}</span>
               <input
                 className="form-input"
-                placeholder="Search name or email…"
+                placeholder={t('Search name or email…')}
                 value={candidateSearchInput}
                 onChange={(event) => setCandidateSearchInput(event.target.value)}
               />
             </label>
 
             {candidateError && <p className="form-error">{candidateError}</p>}
-            {candidateLoading && <div className="page-loading">Loading matching profiles…</div>}
+            {candidateLoading && <div className="page-loading">{t('Loading matching profiles…')}</div>}
             {!candidateLoading && !candidateError && candidates.length === 0 && (
-              <div className="notifications-empty">No eligible approved and paid profiles of the opposite gender match your search.</div>
+              <div className="notifications-empty">{t('No eligible approved and paid profiles of the opposite gender match your search.')}</div>
             )}
 
             <div className="admin-assignment-candidates">
               {!candidateLoading && !candidateError && candidates.map((candidate) => {
                 const isSelected = chosenCandidate?.userId === candidate.userId
-                const isCurrent = assignedProfile?.userId === candidate.userId
+                const isCurrent = assignedProfiles.some((profile) => profile.userId === candidate.userId)
                 return (
                   <button
                     type="button"
                     className={`admin-assignment-candidate${isSelected ? ' is-selected' : ''}`}
                     key={candidate.userId}
                     aria-pressed={isSelected}
+                    disabled={isCurrent}
                     onClick={() => { setChosenCandidate(candidate); setNotice('') }}
                   >
                     <ProfileAvatar profile={candidate} />
@@ -265,7 +275,7 @@ export default function AdminAssignmentsPage() {
                       <span>{candidate.age ? `${candidate.age} yrs · ` : ''}{candidate.city || 'Location not set'}</span>
                     </span>
                     <span className="admin-assignment-candidate-status">
-                      {isCurrent ? 'Currently assigned' : statusChip(candidate.status)}
+                      {isCurrent ? t('Currently assigned') : statusChip(candidate.status)}
                     </span>
                   </button>
                 )
@@ -281,14 +291,14 @@ export default function AdminAssignmentsPage() {
             )}
 
             <div className="admin-confirm-actions">
-              <button type="button" className="btn btn-outline" disabled={saving} onClick={closeAssignment}>Close</button>
+              <button type="button" className="btn btn-outline" disabled={saving} onClick={closeAssignment}>{t('Close')}</button>
               <button
                 type="button"
                 className="btn btn-primary"
-                disabled={!chosenCandidate || saving || chosenCandidate.userId === assignedProfile?.userId}
+                disabled={!chosenCandidate || saving || assignedProfiles.some((profile) => profile.userId === chosenCandidate.userId)}
                 onClick={confirmAssignment}
               >
-                {saving ? 'Saving…' : 'Confirm assignment'}
+                {saving ? t('Saving…') : t('Confirm assignment')}
               </button>
             </div>
           </section>

@@ -13,62 +13,63 @@ function ageFrom(dob) {
 }
 
 // ---------------------------------------------------------------------------
-// GET /api/browse — only the member's admin-assigned match
+// GET /api/browse — only the member's admin-assigned matches
 // ---------------------------------------------------------------------------
 export async function listBrowse(req, res, next) {
   try {
     const viewer = await requireApprovedProfile(req.user.id)
     const oppositeGender = viewer.gender === 'male' ? 'female' : 'male'
 
-    const { data: assignment, error: assignmentError } = await supabase
+    const { data: assignments, error: assignmentError } = await supabase
       .from('profile_assignments')
       .select('bride_user_id, groom_user_id')
       .or(`bride_user_id.eq.${req.user.id},groom_user_id.eq.${req.user.id}`)
-      .maybeSingle()
     if (assignmentError) throw assignmentError
 
-    if (!assignment) {
+    const partnerIds = [...new Set((assignments || []).map((assignment) =>
+      assignment.bride_user_id === req.user.id ? assignment.groom_user_id : assignment.bride_user_id
+    ))]
+    if (partnerIds.length === 0) {
       return res.json({
         success: true,
-        data: { items: [], assignedMatch: null, hasAssignment: false, total: 0 },
+        data: { items: [], assignedMatches: [], assignedMatch: null, hasAssignment: false, total: 0 },
       })
     }
 
-    const assignedPartnerId = assignment.bride_user_id === req.user.id
-      ? assignment.groom_user_id
-      : assignment.bride_user_id
-    const [activeUserRes, verifiedPaymentRes, profileRes] = await Promise.all([
+    const [activeUsersRes, verifiedPaymentsRes, profilesRes] = await Promise.all([
       supabase
         .from('users')
         .select('id')
-        .eq('id', assignedPartnerId)
+        .in('id', partnerIds)
         .eq('role', 'user')
-        .eq('is_active', true)
-        .maybeSingle(),
+        .eq('is_active', true),
       supabase
         .from('membership_payments')
         .select('user_id')
-        .eq('user_id', assignedPartnerId)
-        .eq('status', 'verified')
-        .maybeSingle(),
+        .in('user_id', partnerIds)
+        .eq('status', 'verified'),
       supabase
         .from('profiles')
         .select('id, user_id, name, gender, date_of_birth, height_cm, city, state, highest_qualification, occupation, marital_status, gotra')
-        .eq('user_id', assignedPartnerId)
+        .in('user_id', partnerIds)
         .eq('profile_status', 'approved')
         .eq('payment_required', false)
-        .eq('gender', oppositeGender)
-        .maybeSingle(),
+        .eq('gender', oppositeGender),
     ])
-    if (activeUserRes.error) throw activeUserRes.error
-    if (verifiedPaymentRes.error) throw verifiedPaymentRes.error
-    if (profileRes.error) throw profileRes.error
+    if (activeUsersRes.error) throw activeUsersRes.error
+    if (verifiedPaymentsRes.error) throw verifiedPaymentsRes.error
+    if (profilesRes.error) throw profilesRes.error
 
-    const profile = profileRes.data
-    if (!activeUserRes.data || !verifiedPaymentRes.data || !profile) {
+    const activeUserIds = new Set((activeUsersRes.data || []).map((user) => user.id))
+    const verifiedUserIds = new Set((verifiedPaymentsRes.data || []).map((payment) => payment.user_id))
+    const profiles = (profilesRes.data || []).filter((profile) =>
+      activeUserIds.has(profile.user_id) && verifiedUserIds.has(profile.user_id)
+    )
+    const visibleUserIds = profiles.map((profile) => profile.user_id)
+    if (visibleUserIds.length === 0) {
       return res.json({
         success: true,
-        data: { items: [], assignedMatch: null, hasAssignment: true, total: 0 },
+        data: { items: [], assignedMatches: [], assignedMatch: null, hasAssignment: true, total: 0 },
       })
     }
 
@@ -76,19 +77,19 @@ export async function listBrowse(req, res, next) {
       supabase
         .from('horoscope_details')
         .select('user_id, nakshatra')
-        .eq('user_id', assignedPartnerId)
-        .maybeSingle(),
+        .in('user_id', visibleUserIds),
       supabase
         .from('profile_photos')
         .select('user_id, url')
-        .eq('user_id', assignedPartnerId)
-        .eq('is_main', true)
-        .maybeSingle(),
+        .in('user_id', visibleUserIds)
+        .eq('is_main', true),
     ])
     if (horoRes.error) throw horoRes.error
     if (photoRes.error) throw photoRes.error
 
-    const assignedMatch = {
+    const horoscopes = Object.fromEntries((horoRes.data || []).map((row) => [row.user_id, row.nakshatra]))
+    const photos = Object.fromEntries((photoRes.data || []).map((row) => [row.user_id, row.url]))
+    const assignedMatches = profiles.map((profile) => ({
       profileId: profile.id,
       userId: profile.user_id,
       name: profile.name,
@@ -100,14 +101,20 @@ export async function listBrowse(req, res, next) {
       education: profile.highest_qualification,
       occupation: profile.occupation,
       maritalStatus: profile.marital_status,
-      nakshatra: horoRes.data?.nakshatra ?? null,
+      nakshatra: horoscopes[profile.user_id] ?? null,
       gotra: profile.gotra ?? null,
-      profilePhotoUrl: photoRes.data?.url ?? null,
-    }
+      profilePhotoUrl: photos[profile.user_id] ?? null,
+    }))
 
     res.json({
       success: true,
-      data: { items: [assignedMatch], assignedMatch, hasAssignment: true, total: 1 },
+      data: {
+        items: assignedMatches,
+        assignedMatches,
+        assignedMatch: assignedMatches[0] ?? null,
+        hasAssignment: true,
+        total: assignedMatches.length,
+      },
     })
   } catch (err) {
     next(err)

@@ -13,8 +13,8 @@
   --error: #a52c31;
   --success: #397454;
 
-  --font-head: 'Montserrat', Arial, sans-serif;
-  --font-body: 'Montserrat', Arial, sans-serif;
+  --font-head: 'Montserrat', 'Noto Sans Devanagari', 'Nirmala UI', Arial, sans-serif;
+  --font-body: 'Montserrat', 'Noto Sans Devanagari', 'Nirmala UI', Arial, sans-serif;
 
   --radius: 18px;
   --radius-sm: 12px;
@@ -75,6 +75,12 @@ h3,
 .page .public-title {
   font-family: var(--font-head);
   letter-spacing: normal;
+}
+
+html[lang='mr'] .hero-title {
+  font-size: clamp(32px, 4vw, 54px);
+  letter-spacing: 0;
+  line-height: 1.2;
 }
 
 :focus-visible {

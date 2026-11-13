@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { api } from '../api/api.js'
+import { useLanguage } from '../context/LanguageContext.jsx'
 
 const STATUS_UI = {
   draft: {
@@ -19,7 +20,7 @@ const STATUS_UI = {
   approved: {
     chip: 'status-chip status-chip--approved',
     label: 'Approved',
-    message: '✅ Your profile is approved. Once your payment is verified, an admin can assign you a match.',
+    message: '✅ Your profile is approved. Once your payment is verified, an admin can assign you one or more profiles.',
   },
   rejected: {
     chip: 'status-chip status-chip--rejected',
@@ -31,6 +32,7 @@ const STATUS_UI = {
 
 export default function UserDashboard() {
   const { user, logout } = useAuth()
+  const { t } = useLanguage()
   const navigate = useNavigate()
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -65,9 +67,9 @@ export default function UserDashboard() {
     <div className="dashboard-page">
       <div className="dashboard-card">
         <h1 className="dashboard-title">
-          Welcome, <span className="accent">{user.name}</span>
+          {t('Welcome,')} <span className="accent">{user.name}</span>
         </h1>
-        <p className="dashboard-sub">This is your matrimony dashboard.</p>
+        <p className="dashboard-sub">{t('This is your matrimony dashboard.')}</p>
 
         {loading && <div className="page-loading">Loading your profile…</div>}
         {error && <p className="form-error">{error}</p>}
@@ -82,33 +84,33 @@ export default function UserDashboard() {
               <div className="profile-progress-fill" style={{ width: `${percent}%` }} />
             </div>
             <p className="dash-status-message">
-              {status === 'approved' && profile.paymentRequired
-                ? '✅ Your profile is approved. The admin will send a payment request; a match can be assigned after your payment is verified.'
-                : ui.message}
+              {t(status === 'approved' && profile.paymentRequired
+                ? '✅ Your profile is approved. The admin will send a payment request; profiles can be assigned after your payment is verified.'
+                : ui.message)}
             </p>
             {status === 'rejected' && profile.rejectionReason && (
               <p className="dash-status-reason">Reason: {profile.rejectionReason}</p>
             )}
             {status === 'approved' && profile.paymentRequired ? (
               <div style={{ marginTop: 12 }}>
-                <Link to="/payment" className="btn btn-primary dash-action-btn">Payment details</Link>
+                <Link to="/payment" className="btn btn-primary dash-action-btn">{t('Payment details')}</Link>
                 <p style={{ marginTop: 8, fontSize: 13, color: 'var(--text)' }}>
-                  🔒 Your payment must be verified before an admin can assign your match.
+                  🔒 {t('Your payment must be verified before an admin can assign profiles to you.')}
                 </p>
               </div>
             ) : status === 'approved' ? (
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>
                 <Link to="/browse" className="btn btn-primary dash-action-btn">
-                  Assigned matches
+                  {t('Assigned matches')}
                 </Link>
               </div>
             ) : (
               <div>
                 <span className="btn btn-primary dash-action-btn" style={{ opacity: 0.5, cursor: 'not-allowed', pointerEvents: 'none' }}>
-                  Assigned matches
+                  {t('Assigned matches')}
                 </span>
                 <p style={{ marginTop: 8, fontSize: 13, color: 'var(--text)' }}>
-                  🔒 Your profile must be approved and payment verified before an admin can assign your match.
+                  🔒 {t('Your profile must be approved and payment verified before an admin can assign profiles to you.')}
                 </p>
               </div>
             )}
@@ -117,13 +119,13 @@ export default function UserDashboard() {
 
         <div className="dashboard-actions">
           <button type="button" className="btn btn-outline" onClick={() => navigate('/profile')}>
-            Profile
+            {t('Profile')}
           </button>
           <button type="button" className="btn btn-outline" onClick={() => navigate('/notifications')}>
-            Notifications
+            {t('Notifications')}
           </button>
           <button type="button" className="btn btn-outline" onClick={handleLogout}>
-            Logout
+            {t('Logout')}
           </button>
         </div>
       </div>

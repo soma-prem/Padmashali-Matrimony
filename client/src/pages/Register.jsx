@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import PasswordInput from '../components/PasswordInput.jsx'
+import { useLanguage } from '../context/LanguageContext.jsx'
 
 const STEPS = { EMAIL: 'EMAIL', OTP: 'OTP', DETAILS: 'DETAILS' }
 const OTP_LENGTH = 6
@@ -9,6 +10,7 @@ const RESEND_COOLDOWN = 60 // seconds
 
 export default function Register() {
   const { sendOtp, verifyOtp, register } = useAuth()
+  const { t } = useLanguage()
   const navigate = useNavigate()
 
   const [step, setStep] = useState(STEPS.EMAIL)
@@ -192,15 +194,15 @@ export default function Register() {
         }
         noValidate
       >
-        <h1>Create account</h1>
-        <p className="auth-subtitle">Join the Padmashali Samaj Matrimony community</p>
+        <h1>{t('Create account')}</h1>
+        <p className="auth-subtitle">{t('Join the Padmashali Samaj Matrimony community')}</p>
 
         {/* Step progress bar */}
         <div className="otp-steps">
           {stepLabels.map((label, i) => (
             <div key={label} className={`otp-step ${i + 1 <= stepNumber ? 'active' : ''}`}>
               <span className="otp-step-number">{i + 1}</span>
-              <span className="otp-step-label">{label}</span>
+              <span className="otp-step-label">{t(label)}</span>
             </div>
           ))}
         </div>
@@ -211,7 +213,7 @@ export default function Register() {
         {step === STEPS.EMAIL && (
           <>
             <label className="form-label" htmlFor="reg-email">
-              Email address
+              {t('Email address')}
             </label>
             <input
               id="reg-email"
@@ -226,7 +228,7 @@ export default function Register() {
             />
 
             <button type="submit" className="btn btn-primary btn-block" disabled={submitting}>
-              {submitting ? 'Sending OTP…' : 'Send Verification Code'}
+              {submitting ? t('Sending OTP…') : t('Send Verification Code')}
             </button>
           </>
         )}
@@ -235,7 +237,7 @@ export default function Register() {
         {step === STEPS.OTP && (
           <>
             <p className="otp-info">
-              We've sent a 6-digit code to <strong>{email}</strong>
+              {t("We've sent a 6-digit code to")} <strong>{email}</strong>
             </p>
 
             <div className="otp-inputs" onPaste={handleOtpPaste}>
@@ -256,13 +258,13 @@ export default function Register() {
             </div>
 
             <button type="submit" className="btn btn-primary btn-block" disabled={submitting}>
-              {submitting ? 'Verifying…' : 'Verify Code'}
+              {submitting ? t('Verifying…') : t('Verify Code')}
             </button>
 
             <p className="otp-resend">
-              Didn't receive it?{' '}
+              {t("Didn't receive it?")}{' '}
               {cooldown > 0 ? (
-                <span className="otp-resend-timer">Resend in {cooldown}s</span>
+                <span className="otp-resend-timer">{t('Resend in')} {cooldown}s</span>
               ) : (
                 <button
                   type="button"
@@ -270,7 +272,7 @@ export default function Register() {
                   onClick={handleResend}
                   disabled={submitting}
                 >
-                  Resend OTP
+                  {t('Resend OTP')}
                 </button>
               )}
             </p>
@@ -284,7 +286,7 @@ export default function Register() {
                 setError('')
               }}
             >
-              ← Change email
+              ← {t('Change email')}
             </button>
           </>
         )}
@@ -293,11 +295,11 @@ export default function Register() {
         {step === STEPS.DETAILS && (
           <>
             <p className="otp-info">
-              ✅ <strong>{email}</strong> verified! Now set up your account.
+              ✅ <strong>{email}</strong> {t('verified! Now set up your account.')}
             </p>
 
             <label className="form-label" htmlFor="reg-name">
-              Full name
+              {t('Full name')}
             </label>
             <input
               id="reg-name"
@@ -312,11 +314,11 @@ export default function Register() {
             />
 
             <label className="form-label" htmlFor="reg-password">
-              Password
+              {t('Password')}
             </label>
             <PasswordInput
               id="reg-password"
-              placeholder="At least 8 characters"
+              placeholder={t('At least 8 characters')}
               value={form.password}
               onChange={updateForm('password')}
               autoComplete="new-password"
@@ -325,11 +327,11 @@ export default function Register() {
             />
 
             <label className="form-label" htmlFor="reg-confirm">
-              Confirm password
+              {t('Confirm password')}
             </label>
             <PasswordInput
               id="reg-confirm"
-              placeholder="Re-enter password"
+              placeholder={t('Re-enter password')}
               value={form.confirmPassword}
               onChange={updateForm('confirmPassword')}
               autoComplete="new-password"
@@ -337,13 +339,13 @@ export default function Register() {
             />
 
             <button type="submit" className="btn btn-primary btn-block" disabled={submitting}>
-              {submitting ? 'Creating account…' : 'Register'}
+              {submitting ? t('Creating account…') : t('Register')}
             </button>
           </>
         )}
 
         <p className="auth-switch">
-          Already have an account? <Link to="/login">Login</Link>
+          {t('Already have an account?')} <Link to="/login">{t('Login')}</Link>
         </p>
       </form>
     </div>

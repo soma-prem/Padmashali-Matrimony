@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api/api.js'
+import { useLanguage } from '../context/LanguageContext.jsx'
 
 function ProfileCard({ p, assigned = false }) {
+  const { t } = useLanguage()
   return (
     <Link to={`/browse/${p.profileId}`} className="browse-card">
       <div className="browse-card-photo-wrap">
@@ -13,7 +15,7 @@ function ProfileCard({ p, assigned = false }) {
             {(p.name || '?').slice(0, 1)}
           </div>
         )}
-        {assigned && <span className="assigned-match-chip">Assigned match</span>}
+        {assigned && <span className="assigned-match-chip">{t('Assigned match')}</span>}
       </div>
       <div className="browse-card-body">
         <div className="browse-card-name">{p.name}</div>
@@ -33,7 +35,8 @@ function ProfileCard({ p, assigned = false }) {
 }
 
 export default function Browse() {
-  const [assignedMatch, setAssignedMatch] = useState(null)
+  const { t } = useLanguage()
+  const [assignedMatches, setAssignedMatches] = useState([])
   const [hasAssignment, setHasAssignment] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -43,8 +46,11 @@ export default function Browse() {
     setError('')
     try {
       const data = await api('/browse')
-      setAssignedMatch(data.data.assignedMatch ?? null)
-      setHasAssignment(data.data.hasAssignment ?? Boolean(data.data.assignedMatch))
+      const matches = data.data.assignedMatches ?? data.data.items ?? (
+        data.data.assignedMatch ? [data.data.assignedMatch] : []
+      )
+      setAssignedMatches(matches)
+      setHasAssignment(data.data.hasAssignment ?? matches.length > 0)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -57,27 +63,27 @@ export default function Browse() {
   return (
     <div className="browse-page">
       <h1 className="dashboard-title" style={{ marginBottom: 14 }}>
-        Assigned matches
+        {t('Assigned matches')}
       </h1>
 
       {error && <p className="form-error">{error}</p>}
-      {loading && <div className="page-loading">Loading your assigned match…</div>}
+      {loading && <div className="page-loading">{t('Loading your assigned profiles…')}</div>}
 
       {!loading && !error && !hasAssignment && (
         <div className="notifications-empty">
-          The admin has not assigned any profiles to you yet.
+          {t('The admin has not assigned any profiles to you yet.')}
         </div>
       )}
 
-      {!loading && !error && hasAssignment && !assignedMatch && (
+      {!loading && !error && hasAssignment && assignedMatches.length === 0 && (
         <div className="notifications-empty">
-          Your assigned profile is temporarily unavailable. Please contact the admin.
+          {t('Your assigned profiles are temporarily unavailable. Please contact the admin.')}
         </div>
       )}
 
-      {!loading && !error && assignedMatch && (
+      {!loading && !error && assignedMatches.length > 0 && (
         <div className="browse-grid">
-          <ProfileCard p={assignedMatch} assigned />
+          {assignedMatches.map((profile) => <ProfileCard key={profile.profileId} p={profile} assigned />)}
         </div>
       )}
     </div>

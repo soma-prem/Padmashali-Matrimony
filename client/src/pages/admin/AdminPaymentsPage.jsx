@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { api, toast } from '../../api/api.js'
 import ConfirmDialog from '../../components/admin/ConfirmDialog.jsx'
 import PhotoPreview from '../../components/admin/PhotoPreview.jsx'
+import { useLanguage } from '../../context/LanguageContext.jsx'
 
 function fmtDate(value) {
   if (!value) return '—'
@@ -10,6 +11,7 @@ function fmtDate(value) {
 }
 
 export default function AdminPaymentsPage() {
+  const { t } = useLanguage()
   const [tab, setTab] = useState('submitted')
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
@@ -75,11 +77,11 @@ export default function AdminPaymentsPage() {
   return (
     <div>
       <div className="admin-section-header">
-        <h1>Payments</h1>
-        <p>Review and verify member payments and proof submissions.</p>
+        <h1>{t('Payments')}</h1>
+        <p>{t('Review and verify member payments and proof submissions.')}</p>
       </div>
 
-      <div className="admin-tab-bar" role="tablist" aria-label="Payments tabs">
+      <div className="admin-tab-bar" role="tablist"       aria-label={t('Payments tabs')}>
         <button
           type="button"
           role="tab"
@@ -87,7 +89,7 @@ export default function AdminPaymentsPage() {
           className={`admin-tab ${tab === 'submitted' ? 'admin-tab--active' : ''}`}
           onClick={() => setTab('submitted')}
         >
-          Needs verification
+          {t('Needs verification')}
         </button>
         <button
           type="button"
@@ -106,8 +108,8 @@ export default function AdminPaymentsPage() {
           <input
             className="form-input admin-payment-search"
             type="search"
-            placeholder="Search name, email or UTR…"
-            aria-label="Search payments by member name, email, or UTR"
+            placeholder={t('Search name, email or UTR…')}
+            aria-label={t('Search payments by member name, email, or UTR')}
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
           />
@@ -115,29 +117,29 @@ export default function AdminPaymentsPage() {
 
         <div className="admin-payment-date-grid">
           <label className="admin-payment-date-filter">
-            <span>{tab === 'verified' ? 'Completed from' : 'Submitted from'}</span>
+            <span>{t(tab === 'verified' ? 'Completed from' : 'Submitted from')}</span>
             <input className="form-input" type="date" value={fromInput}
               onChange={(event) => setFromInput(event.target.value)} />
           </label>
           <label className="admin-payment-date-filter">
-            <span>{tab === 'verified' ? 'Completed to' : 'Submitted to'}</span>
+            <span>{t(tab === 'verified' ? 'Completed to' : 'Submitted to')}</span>
             <input className="form-input" type="date" value={toInput}
               onChange={(event) => setToInput(event.target.value)} />
           </label>
         </div>
 
         <div className="admin-payment-actions-row">
-          <button type="submit" className="btn btn-primary admin-payment-submit-btn">Apply filters</button>
-          <button type="button" className="btn btn-outline admin-payment-clear-btn" onClick={clearFilters}>Clear</button>
+          <button type="submit" className="btn btn-primary admin-payment-submit-btn">{t('Apply filters')}</button>
+          <button type="button" className="btn btn-outline admin-payment-clear-btn" onClick={clearFilters}>{t('Clear')}</button>
         </div>
       </form>
       {error && <p className="form-error" role="alert">{error}</p>}
-      {loading && <div className="page-loading">Loading payments…</div>}
+      {loading && <div className="page-loading">{t('Loading payments…')}</div>}
       {!loading && !error && items.length === 0 && (
         <div className="notifications-empty">
           {filters.search || filters.from || filters.to
-            ? 'No payments match the search or date filters.'
-            : tab === 'verified' ? 'No completed payments yet.' : 'No payments are waiting for verification.'}
+            ? t('No payments match the search or date filters.')
+            : tab === 'verified' ? t('No completed payments yet.') : t('No payments are waiting for verification.')}
         </div>
       )}
 
@@ -162,7 +164,7 @@ export default function AdminPaymentsPage() {
                 aria-expanded={expandedId === item.id}
                 onClick={() => setExpandedId((current) => current === item.id ? null : item.id)}
               >
-                {expandedId === item.id ? 'View less' : 'View more'}
+                {expandedId === item.id ? t('View less') : t('View more')}
               </button>
             </div>
             {expandedId === item.id && (
@@ -172,21 +174,21 @@ export default function AdminPaymentsPage() {
                     <p>Submitted: {fmtDate(item.submittedAt)}</p>
                     {item.status === 'verified' && <p>Completed: {fmtDate(item.reviewedAt)}</p>}
                   </div>
-                  <Link to={`/admin/profiles/${item.userId}`} className="btn btn-outline btn-sm">View profile</Link>
+                  <Link to={`/admin/profiles/${item.userId}`} className="btn btn-outline btn-sm">{t('View profile')}</Link>
                 </div>
                 <div className="admin-payment-data">
-                  <div><strong>Amount</strong><span>₹{Number(item.amount).toLocaleString('en-IN')}</span></div>
-                  <div><strong>UTR number</strong><span>{item.utrNumber}</span></div>
-                  <div><strong>Request sent</strong><span>{fmtDate(item.requestSentAt)}</span></div>
+                  <div><strong>{t('Amount')}</strong><span>₹{Number(item.amount).toLocaleString('en-IN')}</span></div>
+                  <div><strong>{t('UTR number')}</strong><span>{item.utrNumber}</span></div>
+                  <div><strong>{t('Request sent')}</strong><span>{fmtDate(item.requestSentAt)}</span></div>
                 </div>
                 <div className="admin-payment-images">
                   <div>
-                    <h3>Payment screenshot</h3>
+                    <h3>{t('Payment screenshot')}</h3>
                     <PhotoPreview src={item.paymentScreenshotUrl} alt={`${item.profileName || 'Member'} payment screenshot`}
                       className="admin-payment-proof-image" />
                   </div>
                   <div>
-                    <h3>Requested QR/scanner</h3>
+                    <h3>{t('Requested QR/scanner')}</h3>
                     <PhotoPreview src={item.qrImageUrl} alt="Payment QR code"
                       className="admin-payment-proof-image" />
                   </div>
@@ -194,22 +196,22 @@ export default function AdminPaymentsPage() {
                 {item.status === 'submitted' && <div className="admin-payment-actions">
                   <button type="button" className="btn btn-primary" disabled={busyId === item.id}
                     onClick={() => setConfirmation({
-                      title: 'Verify this payment?',
-                      message: 'Confirm that the UTR and payment screenshot match. The member will then be eligible for an admin-assigned match.',
-                      confirmLabel: 'Verify payment',
+                      title: t('Verify this payment?'),
+                      message: t('Confirm that the UTR and payment screenshot match. The member will then be eligible for an admin-assigned match.'),
+                      confirmLabel: t('Verify payment'),
                       action: () => runAction(item, 'verify'),
                     })}>
-                    Verify payment
+                    {t('Verify payment')}
                   </button>
                   <button type="button" className="btn btn-danger" disabled={busyId === item.id}
                     onClick={() => setConfirmation({
-                      title: 'Return payment for correction?',
-                      message: 'The member will be asked to check the UTR and submit a clear screenshot again.',
-                      confirmLabel: 'Request resubmission',
+                      title: t('Return payment for correction?'),
+                      message: t('The member will be asked to check the UTR and submit a clear screenshot again.'),
+                      confirmLabel: t('Request resubmission'),
                       danger: true,
                       action: () => runAction(item, 'reject'),
                     })}>
-                    Request resubmission
+                    {t('Request resubmission')}
                   </button>
                 </div>}
               </div>

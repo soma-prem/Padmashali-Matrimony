@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api, toast } from '../api/api.js'
+import { useLanguage } from '../context/LanguageContext.jsx'
 
 function timeAgo(iso) {
   const s = Math.max(1, Math.floor((Date.now() - new Date(iso).getTime()) / 1000))
@@ -14,6 +15,7 @@ function timeAgo(iso) {
 }
 
 export default function Notifications() {
+  const { t } = useLanguage()
   const [items, setItems] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -64,23 +66,22 @@ export default function Notifications() {
   return (
     <div className="dashboard-page notifications-page">
       <div className="dashboard-card">
-        <h1 className="dashboard-title">Notifications</h1>
+        <h1 className="dashboard-title">{t('Notifications')}</h1>
 
         <div className="notif-toolbar">
           <button type="button" className="btn btn-outline btn-sm" disabled={busyAll || unread === 0} onClick={markAll}>
-            {busyAll ? 'Please wait…' : `Mark all read${unread ? ` (${unread})` : ''}`}
+            {busyAll ? t('Please wait…') : `${t('Mark all read')}${unread ? ` (${unread})` : ''}`}
           </button>
         </div>
 
-        {loading && <div className="page-loading">Loading notifications…</div>}
+        {loading && <div className="page-loading">{t('Loading notifications…')}</div>}
         {error && <p className="form-error">{error}</p>}
 
         {!loading && !error && (
           items.length === 0 ? (
             <div className="notif-empty">
-              <p><strong>No notifications yet.</strong></p>
-              <p>You will be notified here when your profile is reviewed,
-                someone shows interest, or a match is approved.</p>
+              <p><strong>{t('No notifications yet.')}</strong></p>
+              <p>{t('You will be notified here when your profile is reviewed, someone shows interest, or a match is approved.')}</p>
             </div>
           ) : (
             <div className="notif-list">
@@ -95,7 +96,7 @@ export default function Notifications() {
                   <span className="notif-dot" aria-hidden="true" />
                   <span className="notif-body">
                     <span className="notif-title">{n.title}</span>
-                    <span className="notif-message" style={{ display: 'block' }}>{n.message}</span>
+                      <span className="notif-message" style={{ display: 'block' }}>{n.message}</span>
                   </span>
                   <span className="notif-time">{timeAgo(n.createdAt)}</span>
                 </button>

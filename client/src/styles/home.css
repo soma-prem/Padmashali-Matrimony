@@ -27,6 +27,12 @@
   max-width: 550px;
 }
 
+.hero-language-toggle {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
 .hero-eyebrow,
 .section-kicker {
   margin: 0 0 16px;

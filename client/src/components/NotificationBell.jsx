@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { api } from '../api/api.js'
+import { useLanguage } from '../context/LanguageContext.jsx'
 
 /**
  * Sidebar notifications link — polls unread count every 30s (user role only).
  * Pass onClick to close the mobile sidebar after navigation.
  */
 export default function NotificationBell({ onClick }) {
+  const { t } = useLanguage()
   const [unread, setUnread] = useState(0)
 
   useEffect(() => {
@@ -33,10 +35,10 @@ export default function NotificationBell({ onClick }) {
       to="/notifications"
       className={({ isActive }) => `notif-bell${isActive ? ' active' : ''}`}
       onClick={onClick}
-      aria-label={`Notifications${unread ? `, ${unread} unread` : ''}`}
+      aria-label={`${t('Notifications')}${unread ? `, ${unread} ${t('unread')}` : ''}`}
     >
       <span aria-hidden="true">♢</span>
-      <span>Notifications</span>
+      <span>{t('Notifications')}</span>
       {unread > 0 && <span className="bell-badge">{unread > 99 ? '99+' : unread}</span>}
     </NavLink>
   )

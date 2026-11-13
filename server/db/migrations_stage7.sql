@@ -2,7 +2,7 @@
 -- STAGE 7 migration — assigned-only matchmaking.
 -- Run once in the Supabase SQL editor after Stage 6.
 -- Drops existing interest request/connection data and requires
--- approved, paid, active profiles for every new assignment.
+-- approved, paid, active profiles for every distinct assignment.
 -- Safe to re-run.
 -- ============================================================
 
@@ -34,6 +34,7 @@ DECLARE
   v_groom_active boolean;
   v_assigner_role text;
   v_user_id uuid;
+  v_inserted_count integer;
 BEGIN
   IF p_bride_user_id IS NULL OR p_groom_user_id IS NULL
      OR p_bride_user_id = p_groom_user_id THEN
@@ -92,17 +93,17 @@ BEGIN
     PERFORM pg_advisory_xact_lock(hashtext(v_user_id::text));
   END LOOP;
 
-  DELETE FROM public.profile_assignments
-  WHERE bride_user_id IN (p_bride_user_id, p_groom_user_id)
-     OR groom_user_id IN (p_bride_user_id, p_groom_user_id);
-
   INSERT INTO public.profile_assignments (bride_user_id, groom_user_id, assigned_by)
-  VALUES (p_bride_user_id, p_groom_user_id, p_assigned_by);
+  VALUES (p_bride_user_id, p_groom_user_id, p_assigned_by)
+  ON CONFLICT (bride_user_id, groom_user_id) DO NOTHING;
+  GET DIAGNOSTICS v_inserted_count = ROW_COUNT;
 
-  INSERT INTO public.notifications (user_id, title, message)
-  VALUES
-    (p_bride_user_id, 'Your match was assigned', 'The admin assigned a match to your profile. Open Assigned matches to view the profile and contact details.'),
-    (p_groom_user_id, 'Your match was assigned', 'The admin assigned a match to your profile. Open Assigned matches to view the profile and contact details.');
+  IF v_inserted_count > 0 THEN
+    INSERT INTO public.notifications (user_id, title, message)
+    VALUES
+      (p_bride_user_id, 'Your match was assigned', 'The admin assigned a profile to you. Open Assigned matches to view the profile and contact details.'),
+      (p_groom_user_id, 'Your match was assigned', 'The admin assigned a profile to you. Open Assigned matches to view the profile and contact details.');
+  END IF;
 END;
 $$;
 

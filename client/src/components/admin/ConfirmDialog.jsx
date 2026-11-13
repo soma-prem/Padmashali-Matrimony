@@ -1,3 +1,5 @@
+import { useLanguage } from '../../context/LanguageContext.jsx'
+
 export default function ConfirmDialog({
   open,
   title,
@@ -9,6 +11,7 @@ export default function ConfirmDialog({
   onConfirm,
   onCancel,
 }) {
+  const { t } = useLanguage()
   if (!open) return null
 
   return (
@@ -20,11 +23,11 @@ export default function ConfirmDialog({
         <p>{message}</p>
         <div className="admin-confirm-actions">
           <button type="button" className="btn btn-outline" onClick={onCancel} disabled={busy}>
-            {cancelLabel}
+            {t(cancelLabel)}
           </button>
           <button type="button" className={`btn ${danger ? 'btn-danger' : 'btn-primary'}`}
             onClick={onConfirm} disabled={busy}>
-            {busy ? 'Please wait…' : confirmLabel}
+            {busy ? t('Please wait…') : t(confirmLabel)}
           </button>
         </div>
       </section>

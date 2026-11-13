@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom'
 import { usePageMeta } from '../utils/usePageMeta.js'
+import { useLanguage } from '../context/LanguageContext.jsx'
 
 const STEPS = [
   {
     no: '01',
     title: 'Create your profile',
     text: 'Register and fill in your details, community, horoscope, career, family information and photos.',
-    note: 'Your contact details are shared only with your assigned match.',
+    note: 'Your contact details are shared only with profiles the admin assigns to you.',
   },
   {
     no: '02',
@@ -23,24 +24,25 @@ const STEPS = [
   {
     no: '04',
     title: 'Review your match',
-    text: 'The admin assigns one approved, paid profile of the opposite gender for you to review.',
-    note: 'See only your assigned profile and its contact details in the Assigned matches tab.',
+    text: 'The admin may assign one or more approved, paid profiles of the opposite gender for you to review.',
+    note: 'See only your assigned profiles and their contact details in the Assigned matches tab.',
   },
 ]
 
 export default function HowItWorks({ embedded = false }) {
+  const { t } = useLanguage()
   usePageMeta(
-    'How it works',
-    'Complete your profile, get approved, submit payment for admin verification, then receive an admin-assigned match with contact details.',
+    t('How it works'),
+    t('Complete your profile, get approved, submit payment for admin verification, then receive an admin-assigned match with contact details.'),
     !embedded
   )
 
   return (
     <div className="public-page how-page">
       <header className="how-page-heading">
-        <h1 className="public-title">How it works</h1>
+        <h1 className="public-title">{t('How it works')}</h1>
         <p className="section-sub">
-          A simple, family-friendly process with guidance and privacy at every step.
+          {t('A simple, family-friendly process with guidance and privacy at every step.')}
         </p>
       </header>
 
@@ -48,16 +50,16 @@ export default function HowItWorks({ embedded = false }) {
         {STEPS.map((s) => (
           <div className="step-card" key={s.no}>
             <span className="step-number">{s.no}</span>
-            <h3>{s.title}</h3>
-            <p>{s.text}</p>
-            <p className="step-note">{s.note}</p>
+            <h3>{t(s.title)}</h3>
+            <p>{t(s.text)}</p>
+            <p className="step-note">{t(s.note)}</p>
           </div>
         ))}
       </div>
 
       <div className="hero-actions how-actions">
-        <Link to="/register" className="btn btn-primary btn-lg">Register</Link>
-        <Link to="/contact" className="btn btn-outline btn-lg">Contact the admin team</Link>
+        <Link to="/register" className="btn btn-primary btn-lg">{t('Register')}</Link>
+        <Link to="/contact" className="btn btn-outline btn-lg">{t('Contact the admin team')}</Link>
       </div>
     </div>
   )

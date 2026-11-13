@@ -2,19 +2,22 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { api } from '../api/api.js'
 import { formatSiblingDetails } from '../utils/family.js'
+import { useLanguage } from '../context/LanguageContext.jsx'
 
 function Row({ k, v }) {
+  const { t } = useLanguage()
   const text = v === null || v === undefined || v === '' ? '—'
     : typeof v === 'boolean' ? (v ? 'Yes' : 'No') : String(v)
-  return <div><span className="k">{k}</span><span className="v">{text}</span></div>
+  return <div><span className="k">{t(k)}</span><span className="v">{text}</span></div>
 }
 
 function Group({ title, rows, children, profileId }) {
+  const { t } = useLanguage()
   return (
     <div className="review-group browse-detail-group">
       <div className="browse-detail-group-heading">
-        <h4>{title}</h4>
-        {profileId && <span>Profile ID: {profileId.slice(0, 8).toUpperCase()}</span>}
+        <h4>{t(title)}</h4>
+        {profileId && <span>{t('Profile ID')}: {profileId.slice(0, 8).toUpperCase()}</span>}
       </div>
       <div className="review-list">
         {rows.map(([label, value]) => <Row key={label} k={label} v={value} />)}
@@ -25,6 +28,7 @@ function Group({ title, rows, children, profileId }) {
 }
 
 export default function BrowseDetail() {
+  const { t } = useLanguage()
   const { profileId } = useParams()
   const [activeCategory, setActiveCategory] = useState('basic')
   const [profile, setProfile] = useState(null)
@@ -46,13 +50,13 @@ export default function BrowseDetail() {
 
   useEffect(() => { load() }, [profileId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (loading) return <div className="page-loading">Loading profile…</div>
+  if (loading) return <div className="page-loading">{t('Loading profile…')}</div>
   if (error) {
     return (
       <div className="dashboard-page">
         <div className="dashboard-card">
           <p className="form-error">{error}</p>
-          <Link to="/browse" className="btn btn-outline">← Back to assigned matches</Link>
+          <Link to="/browse" className="btn btn-outline">← {t('Back to assigned matches')}</Link>
         </div>
       </div>
     )
@@ -81,7 +85,7 @@ export default function BrowseDetail() {
     <div className="dashboard-page">
       <div className="dashboard-card wide">
         <div style={{ marginBottom: 12 }}>
-          <Link to="/browse" className="btn btn-outline btn-sm">← Back to assigned matches</Link>
+          <Link to="/browse" className="btn btn-outline btn-sm">← {t('Back to assigned matches')}</Link>
         </div>
 
         {/* hero */}
@@ -112,7 +116,7 @@ export default function BrowseDetail() {
         {/* photo gallery */}
         {galleryPhotos.length > 0 && (
           <section className="detail-gallery-section" aria-label="Additional profile photos">
-            <h2 className="detail-gallery-title">More photos</h2>
+            <h2 className="detail-gallery-title">{t('More photos')}</h2>
             <div className="detail-gallery">
               {galleryPhotos.map((p) => <img key={p.id} src={p.url} alt={`${basic.name || 'Profile'} photo`} />)}
             </div>
@@ -120,11 +124,11 @@ export default function BrowseDetail() {
         )}
 
         <div className="detail-assigned-note">
-          ✅ This match was assigned by the admin. Contact details are available below.
+          ✅ {t('This match was assigned by the admin. Contact details are available below.')}
         </div>
 
         <div className="admin-contact-box">
-            <h4>Assigned match contact details</h4>
+            <h4>{t('Assigned match contact details')}</h4>
             <div className="review-list">
               <Row k="Mobile" v={contact.mobile} />
               <Row k="WhatsApp" v={contact.whatsapp} />
@@ -134,7 +138,7 @@ export default function BrowseDetail() {
         </div>
 
         <div className="browse-detail-categories">
-          <div className="browse-detail-tabs" role="tablist" aria-label="Profile information categories">
+          <div className="browse-detail-tabs" role="tablist" aria-label={t('Profile information categories')}>
             {[
               { id: 'basic', label: 'Basic' },
               { id: 'community', label: 'Community' },
@@ -164,7 +168,7 @@ export default function BrowseDetail() {
                   nextCategory.click()
                 }}
               >
-                {category.label}
+                {t(category.label)}
               </button>
             ))}
           </div>
@@ -219,7 +223,7 @@ export default function BrowseDetail() {
             ]}>
               {horo.kundliImageUrl && (
                 <div className="detail-kundli">
-                  <h5>Kundli image</h5>
+                  <h5>{t('Kundli image')}</h5>
                   <a href={horo.kundliImageUrl} target="_blank" rel="noreferrer">
                     <img src={horo.kundliImageUrl} alt={`${basic.name || 'Profile'} Kundli chart`} loading="lazy" />
                   </a>

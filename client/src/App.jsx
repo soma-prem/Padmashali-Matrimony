@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { useEffect } from 'react'
 import { AuthProvider } from './context/AuthContext.jsx'
 import { AdminStatsProvider } from './context/AdminStatsContext.jsx'
+import { LanguageProvider } from './context/LanguageContext.jsx'
 import { api } from './api/api.js'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import Navbar from './components/Navbar.jsx'
@@ -46,14 +47,15 @@ function VisitorTracker() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <AdminStatsProvider>
-          <div className="app-shell">
-            <VisitorTracker />
-            <Navbar />
-            <div className="app-workspace">
-              <main className="app-main">
+    <LanguageProvider>
+      <BrowserRouter>
+        <AuthProvider>
+          <AdminStatsProvider>
+            <div className="app-shell">
+              <VisitorTracker />
+              <Navbar />
+              <div className="app-workspace">
+                <main className="app-main">
               <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/register" element={<Register />} />
@@ -134,13 +136,14 @@ export default function App() {
               </Route>
 
               <Route path="*" element={<NotFound />} />
-              </Routes>
-              </main>
+                </Routes>
+                </main>
+              </div>
+              <Toaster />
             </div>
-            <Toaster />
-          </div>
-        </AdminStatsProvider>
-      </AuthProvider>
-    </BrowserRouter>
+          </AdminStatsProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </LanguageProvider>
   )
 }

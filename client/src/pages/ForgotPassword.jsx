@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
+import { useLanguage } from '../context/LanguageContext.jsx'
 
 const STEPS = { EMAIL: 'EMAIL', OTP: 'OTP', RESET: 'RESET' }
 const OTP_LENGTH = 6
@@ -8,6 +9,7 @@ const RESEND_COOLDOWN = 60 // seconds
 
 export default function ForgotPassword() {
   const { forgotPassword, verifyForgotOtp, resetPassword } = useAuth()
+  const { t } = useLanguage()
   const navigate = useNavigate()
 
   const [step, setStep] = useState(STEPS.EMAIL)
@@ -185,15 +187,15 @@ export default function ForgotPassword() {
         }
         noValidate
       >
-        <h1>Reset password</h1>
-        <p className="auth-subtitle">We'll verify your email before resetting your password</p>
+        <h1>{t('Reset password')}</h1>
+        <p className="auth-subtitle">{t("We'll verify your email before resetting your password")}</p>
 
         {/* Step progress bar */}
         <div className="otp-steps">
           {stepLabels.map((label, i) => (
             <div key={label} className={`otp-step ${i + 1 <= stepNumber ? 'active' : ''}`}>
               <span className="otp-step-number">{i + 1}</span>
-              <span className="otp-step-label">{label}</span>
+              <span className="otp-step-label">{t(label)}</span>
             </div>
           ))}
         </div>
@@ -204,7 +206,7 @@ export default function ForgotPassword() {
         {step === STEPS.EMAIL && (
           <>
             <label className="form-label" htmlFor="fp-email">
-              Email address
+              {t('Email address')}
             </label>
             <input
               id="fp-email"
@@ -219,7 +221,7 @@ export default function ForgotPassword() {
             />
 
             <button type="submit" className="btn btn-primary btn-block" disabled={submitting}>
-              {submitting ? 'Sending OTP…' : 'Send Verification Code'}
+              {submitting ? t('Sending OTP…') : t('Send Verification Code')}
             </button>
           </>
         )}
@@ -228,7 +230,7 @@ export default function ForgotPassword() {
         {step === STEPS.OTP && (
           <>
             <p className="otp-info">
-              We've sent a 6-digit code to <strong>{email}</strong>
+              {t("We've sent a 6-digit code to")} <strong>{email}</strong>
             </p>
 
             <div className="otp-inputs" onPaste={handleOtpPaste}>
@@ -249,13 +251,13 @@ export default function ForgotPassword() {
             </div>
 
             <button type="submit" className="btn btn-primary btn-block" disabled={submitting}>
-              {submitting ? 'Verifying…' : 'Verify Code'}
+              {submitting ? t('Verifying…') : t('Verify Code')}
             </button>
 
             <p className="otp-resend">
-              Didn't receive it?{' '}
+              {t("Didn't receive it?")}{' '}
               {cooldown > 0 ? (
-                <span className="otp-resend-timer">Resend in {cooldown}s</span>
+                <span className="otp-resend-timer">{t('Resend in')} {cooldown}s</span>
               ) : (
                 <button
                   type="button"
@@ -263,7 +265,7 @@ export default function ForgotPassword() {
                   onClick={handleResend}
                   disabled={submitting}
                 >
-                  Resend OTP
+                  {t('Resend OTP')}
                 </button>
               )}
             </p>
@@ -277,7 +279,7 @@ export default function ForgotPassword() {
                 setError('')
               }}
             >
-              ← Change email
+              ← {t('Change email')}
             </button>
           </>
         )}
@@ -286,17 +288,17 @@ export default function ForgotPassword() {
         {step === STEPS.RESET && (
           <>
             <p className="otp-info">
-              ✅ <strong>{email}</strong> verified! Enter your new password below.
+              ✅ <strong>{email}</strong> {t('verified! Enter your new password below.')}
             </p>
 
             <label className="form-label" htmlFor="fp-password">
-              New password
+              {t('New password')}
             </label>
             <input
               id="fp-password"
               type="password"
               className="form-input"
-              placeholder="At least 8 characters"
+              placeholder={t('At least 8 characters')}
               value={form.password}
               onChange={updateForm('password')}
               autoComplete="new-password"
@@ -306,13 +308,13 @@ export default function ForgotPassword() {
             />
 
             <label className="form-label" htmlFor="fp-confirm">
-              Confirm new password
+              {t('Confirm new password')}
             </label>
             <input
               id="fp-confirm"
               type="password"
               className="form-input"
-              placeholder="Re-enter new password"
+              placeholder={t('Re-enter new password')}
               value={form.confirmPassword}
               onChange={updateForm('confirmPassword')}
               autoComplete="new-password"
@@ -320,13 +322,13 @@ export default function ForgotPassword() {
             />
 
             <button type="submit" className="btn btn-primary btn-block" disabled={submitting}>
-              {submitting ? 'Resetting…' : 'Reset Password'}
+              {submitting ? t('Resetting…') : t('Reset Password')}
             </button>
           </>
         )}
 
         <p className="auth-switch">
-          Remember your password? <Link to="/login">Login</Link>
+          {t('Remember your password?')} <Link to="/login">{t('Login')}</Link>
         </p>
       </form>
     </div>

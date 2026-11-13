@@ -1,5 +1,6 @@
 import { SUBMIT_MIN_PERCENT } from '../../utils/profileOptions.js'
 import { formatSiblingDetails } from '../../utils/family.js'
+import { useLanguage } from '../../context/LanguageContext.jsx'
 
 function fmt(v) {
   if (v === null || v === undefined || v === '') return '—'
@@ -8,15 +9,17 @@ function fmt(v) {
 }
 
 function Row({ k, v }) {
+  const { t } = useLanguage()
   return (
     <div>
-      <span className="k">{k}</span>
+      <span className="k">{t(k)}</span>
       <span className="v">{fmt(v)}</span>
     </div>
   )
 }
 
 function ReviewSection({ section, title, disabled, confirmed, onConfirm, onEdit, children }) {
+  const { t } = useLanguage()
   return (
     <section className="review-group">
       <div className="review-section-heading">
@@ -24,7 +27,7 @@ function ReviewSection({ section, title, disabled, confirmed, onConfirm, onEdit,
         {!disabled && (
           <div className="review-section-actions">
             <button type="button" className="review-edit-button" onClick={() => onEdit(section)}
-              aria-label={`Edit ${title}`} title={`Edit ${title}`}>
+              aria-label={`${t('Edit')} ${t(title)}`} title={`${t('Edit')} ${t(title)}`}>
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M12 20h9" />
                 <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z" />
@@ -33,7 +36,7 @@ function ReviewSection({ section, title, disabled, confirmed, onConfirm, onEdit,
             <label className="review-confirm">
               <input type="checkbox" checked={!!confirmed}
                 onChange={(event) => onConfirm(section, event.target.checked)} />
-              <span>{confirmed ? 'Confirmed' : 'Correct'}</span>
+              <span>{confirmed ? t('Confirmed') : t('Correct')}</span>
             </label>
           </div>
         )}
@@ -54,6 +57,7 @@ export default function StepReview({
   onToggleSection,
   allSectionsConfirmed,
 }) {
+  const { t } = useLanguage()
   const { basic = {}, community = {}, educationCareer = {}, lifestyleLocation = {},
     family = {}, horoscope = {}, contact = {} } = profile
   const photos = profile.photos || []
@@ -134,7 +138,7 @@ export default function StepReview({
         </div>
       </ReviewSection>
 
-      <ReviewSection section="photos" title={`Photos (${photos.length})`} disabled={disabled}
+      <ReviewSection section="photos" title={`${t('Photos')} (${photos.length})`} disabled={disabled}
         confirmed={confirmedSections.photos} onConfirm={onToggleSection} onEdit={onEditSection}>
         {photos.length > 0 ? (
           <div className="photo-grid" style={{ marginTop: 8 }}>
@@ -145,7 +149,7 @@ export default function StepReview({
             ))}
           </div>
         ) : (
-          <div className="review-list"><Row k="Photos" v="No photos uploaded" /></div>
+          <div className="review-list"><Row k="Photos" v={t('No photos uploaded')} /></div>
         )}
       </ReviewSection>
 
@@ -161,21 +165,22 @@ export default function StepReview({
 
       {disabled && profile.status === 'pending_approval' ? (
         <div className="submit-block">
-          <p>⏳ Your profile is under review by the admin.</p>
+          <p>⏳ {t('Your profile is under review by the admin.')}</p>
         </div>
       ) : disabled ? null : (
         <div className="submit-block">
           <p>
-            Before submitting: make sure everything above is correct.
-            Contact details stay private until a match is approved.
+            {t('Before submitting: make sure everything above is correct. Contact details stay private until a match is approved.')}
           </p>
           {!canSubmit && (
             <p className="blocked">
               {!allSectionsConfirmed
-                ? 'Confirm that every section is correct before submitting.'
+                ? t('Confirm that every section is correct before submitting.')
                 : completionPercent < SUBMIT_MIN_PERCENT
-                  ? `You need at least ${SUBMIT_MIN_PERCENT}% completion (currently ${completionPercent}%).`
-                  : 'Upload at least 1 photo before submitting.'}
+                  ? t('You need at least {required}% completion (currently {current}%).')
+                    .replace('{required}', String(SUBMIT_MIN_PERCENT))
+                    .replace('{current}', String(completionPercent))
+                  : t('Upload at least 1 photo before submitting.')}
             </p>
           )}
           <button
@@ -184,7 +189,7 @@ export default function StepReview({
             disabled={!canSubmit || submitting}
             onClick={onSubmit}
           >
-            {submitting ? 'Submitting…' : 'Submit for approval'}
+            {submitting ? t('Submitting…') : t('Submit for approval')}
           </button>
         </div>
       )}
