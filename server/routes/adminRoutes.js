@@ -7,11 +7,8 @@ import {
   approveProfile,
   rejectProfile,
   setUserActive,
-  listRequests,
-  getRequestDetail,
-  approveRequest,
-  rejectRequest,
-  listConnections,
+  getProfileAssignment,
+  assignProfilePair,
   listContactMessages,
   setContactMessageHandled,
   replyToContactMessage,
@@ -31,6 +28,8 @@ router.use(authRequired, adminOnly)
 router.get('/stats', getStats)
 router.get('/profiles', listProfiles)
 router.get('/profiles/:id', getFullProfile)
+router.get('/assignments/:userId', getProfileAssignment)
+router.post('/assignments', assignProfilePair)
 router.post('/profiles/:id/approve', approveProfile)
 router.post('/profiles/:id/reject', rejectProfile)
 router.post('/profiles/:id/payment-request', upload.single('image'), sendPaymentRequest)
@@ -38,13 +37,6 @@ router.get('/payments', listPaymentSubmissions)
 router.post('/payments/:id/verify', verifyPayment)
 router.post('/payments/:id/reject', rejectPayment)
 router.patch('/users/:id/active', setUserActive)
-
-// Stage 4 — requests & connections
-router.get('/requests', listRequests)
-router.get('/requests/:id', getRequestDetail)
-router.post('/requests/:id/approve', approveRequest)
-router.post('/requests/:id/reject', rejectRequest)
-router.get('/connections', listConnections)
 
 // Stage 5 — contact messages from the public Contact Us form
 router.get('/messages', listContactMessages)

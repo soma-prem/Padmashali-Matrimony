@@ -15,22 +15,18 @@ export async function getStats(req, res, next) {
       totalProfiles,
       pendingProfiles,
       approvedProfiles,
-      pendingRequests,
       pendingPayments,
-      totalConnections,
       uniqueVisitors,
     ] = await Promise.all([
         supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'user'),
         supabase.from('profiles').select('user_id', { count: 'exact', head: true }),
         supabase.from('profiles').select('user_id', { count: 'exact', head: true }).eq('profile_status', 'pending_approval'),
         supabase.from('profiles').select('user_id', { count: 'exact', head: true }).eq('profile_status', 'approved'),
-        supabase.from('interest_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('membership_payments').select('id', { count: 'exact', head: true }).eq('status', 'submitted'),
-        supabase.from('connections').select('id', { count: 'exact', head: true }),
         supabase.from('site_visitors').select('visitor_id', { count: 'exact', head: true }),
       ])
 
-    for (const r of [usersTotal, totalProfiles, pendingProfiles, approvedProfiles, pendingRequests, pendingPayments, totalConnections, uniqueVisitors]) {
+    for (const r of [usersTotal, totalProfiles, pendingProfiles, approvedProfiles, pendingPayments, uniqueVisitors]) {
       if (r.error) throw r.error
     }
 
@@ -41,9 +37,7 @@ export async function getStats(req, res, next) {
         totalProfiles: totalProfiles.count ?? 0,
         pendingProfiles: pendingProfiles.count ?? 0,
         approvedProfiles: approvedProfiles.count ?? 0,
-        pendingRequests: pendingRequests.count ?? 0,   // always 0 until Stage 4
         pendingPayments: pendingPayments.count ?? 0,
-        totalConnections: totalConnections.count ?? 0, // always 0 until Stage 4
         uniqueVisitors: INITIAL_UNIQUE_VISITORS + (uniqueVisitors.count ?? 0),
       },
     })
@@ -64,13 +58,76 @@ export async function listProfiles(req, res, next) {
   try {
     const { status, gender, search } = req.query
     const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1)
+    const eligibleOnly = req.query.eligible === 'true'
 
     const filters = {}
     if (status && ADMIN_STATUSES.includes(status)) filters.status = status
     if (gender && ADMIN_GENDERS.includes(gender)) filters.gender = gender
 
     const q = String(search || '').trim().slice(0, 80)
-    const searchSafe = q.replace(/,/g, ' ').replace(/[%()]/g, '')
+    const searchSafe = q.replace(/[%(),]/g, ' ').trim()
+    let searchUserIds = null
+
+    if (q && !searchSafe) {
+      searchUserIds = []
+    } else if (searchSafe) {
+      const pattern = `%${searchSafe}%`
+      const [profileSearch, accountNameSearch, emailSearch] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('user_id')
+          .ilike('name', pattern),
+        supabase
+          .from('users')
+          .select('id')
+          .eq('role', 'user')
+          .ilike('name', pattern),
+        supabase
+          .from('users')
+          .select('id')
+          .eq('role', 'user')
+          .ilike('email', pattern),
+      ])
+      if (profileSearch.error) throw profileSearch.error
+      if (accountNameSearch.error) throw accountNameSearch.error
+      if (emailSearch.error) throw emailSearch.error
+
+      searchUserIds = [...new Set([
+        ...(profileSearch.data || []).map((row) => row.user_id),
+        ...(accountNameSearch.data || []).map((row) => row.id),
+        ...(emailSearch.data || []).map((row) => row.id),
+      ])]
+
+    }
+
+    let eligibleUserIds = null
+    if (eligibleOnly) {
+      const [usersRes, paymentsRes] = await Promise.all([
+        supabase.from('users').select('id').eq('role', 'user').eq('is_active', true),
+        supabase.from('membership_payments').select('user_id').eq('status', 'verified'),
+      ])
+      if (usersRes.error) throw usersRes.error
+      if (paymentsRes.error) throw paymentsRes.error
+
+      const verifiedUserIds = new Set((paymentsRes.data || []).map((payment) => payment.user_id))
+      eligibleUserIds = (usersRes.data || [])
+        .map((user) => user.id)
+        .filter((userId) => verifiedUserIds.has(userId))
+      if (eligibleUserIds.length === 0) searchUserIds = []
+    }
+
+    if (searchUserIds?.length === 0) {
+      return res.json({
+        success: true,
+        data: {
+          items: [],
+          page,
+          limit: PAGE_LIMIT,
+          total: 0,
+          totalPages: 1,
+        },
+      })
+    }
 
     const buildListQuery = () => {
       let query = supabase
@@ -78,10 +135,12 @@ export async function listProfiles(req, res, next) {
         .select('id, user_id, name, gender, date_of_birth, city, state, profile_status, payment_required, completion_percent, updated_at, users ( name, email, is_active, created_at )')
       if (filters.status) query = query.eq('profile_status', filters.status)
       if (filters.gender) query = query.eq('gender', filters.gender)
-      if (searchSafe) {
-        query = query.or(
-          `name.ilike.%${searchSafe}%,users.name.ilike.%${searchSafe}%,users.email.ilike.%${searchSafe}%`
-        )
+      if (searchUserIds) query = query.in('user_id', searchUserIds)
+      if (eligibleUserIds) {
+        query = query
+          .eq('profile_status', 'approved')
+          .eq('payment_required', false)
+          .in('user_id', eligibleUserIds)
       }
       // pending last touched first — the admin works top-down
       return query.order('updated_at', { ascending: false })
@@ -199,6 +258,80 @@ export async function getFullProfile(req, res, next) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// GET /api/admin/assignments/:userId — current exclusive assigned match
+// ---------------------------------------------------------------------------
+export async function getProfileAssignment(req, res, next) {
+  try {
+    const userId = req.params.userId
+    if (!/^[0-9a-fA-F-]{36}$/.test(userId)) {
+      throw new AppError('Invalid user id.', 400)
+    }
+
+    const { data: assignment, error } = await supabase
+      .from('profile_assignments')
+      .select('bride_user_id, groom_user_id')
+      .or(`bride_user_id.eq.${userId},groom_user_id.eq.${userId}`)
+      .maybeSingle()
+    if (error) throw error
+
+    const partnerId = assignment
+      ? assignment.bride_user_id === userId ? assignment.groom_user_id : assignment.bride_user_id
+      : null
+    const summaries = partnerId ? await userSummaries([partnerId]) : {}
+
+    res.json({
+      success: true,
+      data: { assignedProfile: partnerId ? summaries[partnerId] ?? null : null },
+    })
+  } catch (err) {
+    next(err)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// POST /api/admin/assignments — replace assignments for both selected users
+// ---------------------------------------------------------------------------
+export async function assignProfilePair(req, res, next) {
+  try {
+    const brideUserId = req.body?.brideUserId
+    const groomUserId = req.body?.groomUserId
+    if (
+      typeof brideUserId !== 'string' ||
+      typeof groomUserId !== 'string' ||
+      !/^[0-9a-fA-F-]{36}$/.test(brideUserId) ||
+      !/^[0-9a-fA-F-]{36}$/.test(groomUserId)
+    ) {
+      throw new AppError('Choose a valid bride and groom profile.', 400)
+    }
+    if (brideUserId === groomUserId) {
+      throw new AppError('Choose two different profiles.', 400)
+    }
+
+    const { error } = await supabase.rpc('assign_profile_pair', {
+      p_bride_user_id: brideUserId,
+      p_groom_user_id: groomUserId,
+      p_assigned_by: req.user.id,
+    })
+    if (error) {
+      if (error.message?.includes('Choose one bride profile and one groom profile')) {
+        throw new AppError('Choose one bride profile and one groom profile.', 400)
+      }
+      if (error.message?.includes('approved profiles with verified payments')) {
+        throw new AppError('Both profiles must be approved and have verified payments before they can be assigned.', 409)
+      }
+      if (error.message?.includes('Only an admin can assign profiles')) {
+        throw new AppError('Only an admin can assign profiles.', 403)
+      }
+      throw error
+    }
+
+    res.json({ success: true, message: 'Profiles assigned successfully.' })
+  } catch (err) {
+    next(err)
+  }
+}
+
 // ------------------------------------------------------------------
 // POST /api/admin/profiles/:id/approve
 // ------------------------------------------------------------------
@@ -223,7 +356,7 @@ export async function approveProfile(req, res, next) {
     await createNotification(
       userId,
       'Profile approved',
-      'Your profile is approved. The admin will send a payment request. Browsing unlocks after payment verification.'
+      'Your profile is approved. The admin will send a payment request. A match can be assigned after payment verification.'
     )
 
     res.json({
@@ -348,18 +481,14 @@ export {
   replyToContactMessage,
 } from './contactController.js'
 
-// ===========================================================================
-// Stage 4 — interest requests & connections
-// ===========================================================================
-
 const ageFromDob = (dob) => {
   if (!dob) return null
   return Math.max(0, Math.floor((Date.now() - new Date(dob).getTime()) / (365.25 * 24 * 3600 * 1000)))
 }
 
 /**
- * Compact per-USER summary used in the admin request/connection lists
- * (name, age, city, photo, email). Returns { [userId]: summary }.
+ * Compact per-user summary used for the current assigned match.
+ * Returns { [userId]: summary }.
  */
 async function userSummaries(userIds) {
   const uniq = [...new Set(userIds)].filter(Boolean)
@@ -397,253 +526,4 @@ async function userSummaries(userIds) {
     }
   }
   return map
-}
-
-// ---------------------------------------------------------------------------
-// GET /api/admin/requests?status=pending|approved|rejected|all
-// ---------------------------------------------------------------------------
-export async function listRequests(req, res, next) {
-  try {
-    const status = ['pending', 'approved', 'rejected', 'all'].includes(req.query.status)
-      ? req.query.status
-      : 'pending'
-    const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1)
-
-    let query = supabase
-      .from('interest_requests')
-      .select('id, sender_id, receiver_id, status, created_at', { count: 'exact' })
-      .order('created_at', { ascending: false })
-    if (status !== 'all') query = query.eq('status', status)
-
-    const { data: requests, error, count } = await query
-      .range((page - 1) * PAGE_LIMIT, page * PAGE_LIMIT - 1)
-    if (error) throw error
-
-    const summaries = await userSummaries(requests.flatMap((r) => [r.sender_id, r.receiver_id]))
-
-    const items = requests
-      .map((r) => ({
-        id: r.id,
-        status: r.status,
-        createdAt: r.created_at,
-        sender: summaries[r.sender_id] ?? null,
-        receiver: summaries[r.receiver_id] ?? null,
-      }))
-      .filter((r) => r.sender && r.receiver)
-
-    res.json({
-      success: true,
-      data: {
-        items,
-        filter: status,
-        page,
-        limit: PAGE_LIMIT,
-        total: count ?? 0,
-        totalPages: Math.max(1, Math.ceil((count ?? 0) / PAGE_LIMIT)),
-      },
-    })
-  } catch (err) {
-    next(err)
-  }
-}
-
-// ---------------------------------------------------------------------------
-// GET /api/admin/requests/:id — BOTH full profiles (contact included), side by side
-// ---------------------------------------------------------------------------
-export async function getRequestDetail(req, res, next) {
-  try {
-    const id = req.params.id
-    if (!/^[0-9a-fA-F-]{36}$/.test(id)) throw new AppError('Invalid request id.', 400)
-
-    const { data: request, error } = await supabase
-      .from('interest_requests')
-      .select('id, sender_id, receiver_id, status, created_at')
-      .eq('id', id)
-      .maybeSingle()
-    if (error) throw error
-    if (!request) throw new AppError('Request not found.', 404)
-
-    const [senderSnapshot, receiverSnapshot, senderAccount, receiverAccount] = await Promise.all([
-      loadProfileSnapshot(request.sender_id, { createIfMissing: false }).catch(() => null),
-      loadProfileSnapshot(request.receiver_id, { createIfMissing: false }).catch(() => null),
-      supabase.from('users').select('id, name, email, role, is_active, created_at').eq('id', request.sender_id).maybeSingle(),
-      supabase.from('users').select('id, name, email, role, is_active, created_at').eq('id', request.receiver_id).maybeSingle(),
-    ])
-    if (senderAccount.error) throw senderAccount.error
-    if (receiverAccount.error) throw receiverAccount.error
-
-    res.json({
-      success: true,
-      data: {
-        request: { id: request.id, status: request.status, createdAt: request.created_at },
-        sender: { profile: senderSnapshot, account: senderAccount.data },
-        receiver: { profile: receiverSnapshot, account: receiverAccount.data },
-      },
-    })
-  } catch (err) {
-    next(err)
-  }
-}
-
-// ---------------------------------------------------------------------------
-// POST /api/admin/requests/:id/approve — creates the connection + notifies BOTH
-// ---------------------------------------------------------------------------
-export async function approveRequest(req, res, next) {
-  try {
-    const id = req.params.id
-    if (!/^[0-9a-fA-F-]{36}$/.test(id)) throw new AppError('Invalid request id.', 400)
-
-    const { data: request, error } = await supabase
-      .from('interest_requests')
-      .select('id, sender_id, receiver_id, status')
-      .eq('id', id)
-      .maybeSingle()
-    if (error) throw error
-    if (!request) throw new AppError('Request not found.', 404)
-    if (request.status !== 'pending') {
-      throw new AppError(`This request was already ${request.status}.`, 400)
-    }
-
-    // create the connection (sorted pair, unique) if not already there
-    const [a, b] = request.sender_id < request.receiver_id
-      ? [request.sender_id, request.receiver_id]
-      : [request.receiver_id, request.sender_id]
-
-    const { data: existingConn } = await supabase
-      .from('connections')
-      .select('id')
-      .eq('user_a_id', a)
-      .eq('user_b_id', b)
-      .maybeSingle()
-    if (!existingConn) {
-      const { error: connError } = await supabase
-        .from('connections')
-        .insert({ user_a_id: a, user_b_id: b })
-      if (connError) throw connError
-    }
-
-    // transition pending -> approved (guards a double-click)
-    const { data: moved, error: updateError } = await supabase
-      .from('interest_requests')
-      .update({ status: 'approved' })
-      .eq('id', id)
-      .eq('status', 'pending')
-      .select('id')
-    if (updateError) throw updateError
-    if (!moved || moved.length === 0) {
-      throw new AppError('This request was already processed.', 400)
-    }
-
-    // names for the notifications
-    const { data: users, error: usersError } = await supabase
-      .from('users')
-      .select('id, name')
-      .in('id', [request.sender_id, request.receiver_id])
-    if (usersError) throw usersError
-    const nameOf = (uid) => users.find((u) => u.id === uid)?.name ?? 'the other member'
-    const otherName = (uid) => nameOf(uid === request.sender_id ? request.receiver_id : request.sender_id)
-
-    await Promise.all([
-      createNotification(
-        request.sender_id,
-        'Request approved',
-        `Your request was approved. You are now connected with ${otherName(request.sender_id)}. You can view their contact details in My Connections.`
-      ),
-      createNotification(
-        request.receiver_id,
-        'You have a new connection',
-        `Your request was approved. You are now connected with ${otherName(request.receiver_id)}. You can view their contact details in My Connections.`
-      ),
-    ])
-
-    res.json({ success: true, message: 'Request approved. Both users are now connected.', data: { status: 'approved' } })
-  } catch (err) {
-    next(err)
-  }
-}
-
-// ---------------------------------------------------------------------------
-// POST /api/admin/requests/:id/reject — optional reason, notifies the SENDER
-// ---------------------------------------------------------------------------
-export async function rejectRequest(req, res, next) {
-  try {
-    const id = req.params.id
-    if (!/^[0-9a-fA-F-]{36}$/.test(id)) throw new AppError('Invalid request id.', 400)
-    const reason = String(req.body?.reason ?? '').trim().slice(0, 500)
-
-    const { data: request, error } = await supabase
-      .from('interest_requests')
-      .select('id, sender_id, receiver_id, status')
-      .eq('id', id)
-      .maybeSingle()
-    if (error) throw error
-    if (!request) throw new AppError('Request not found.', 404)
-    if (request.status !== 'pending') {
-      throw new AppError(`This request was already ${request.status}.`, 400)
-    }
-
-    const { error: updateError } = await supabase
-      .from('interest_requests')
-      .update({ status: 'rejected' })
-      .eq('id', id)
-      .eq('status', 'pending')
-    if (updateError) throw updateError
-
-    // sender's name for the message
-    const { data: sender } = await supabase
-      .from('users').select('name').eq('id', request.sender_id).maybeSingle()
-
-    await createNotification(
-      request.sender_id,
-      'Request not approved',
-      `Your interest request was not approved by the admin.${reason ? ` Reason: ${reason}` : ''}`
-    )
-
-    res.json({
-      success: true,
-      message: `Request rejected. ${sender?.name ?? 'The sender'} has been notified.`,
-      data: { status: 'rejected', reason },
-    })
-  } catch (err) {
-    next(err)
-  }
-}
-
-// ---------------------------------------------------------------------------
-// GET /api/admin/connections — all connections with both summaries
-// ---------------------------------------------------------------------------
-export async function listConnections(req, res, next) {
-  try {
-    const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1)
-    const { data: connections, error, count } = await supabase
-      .from('connections')
-      .select('id, user_a_id, user_b_id, created_at', { count: 'exact' })
-      .order('created_at', { ascending: false })
-      .range((page - 1) * PAGE_LIMIT, page * PAGE_LIMIT - 1)
-    if (error) throw error
-
-    const summaries = await userSummaries(
-      connections.flatMap((c) => [c.user_a_id, c.user_b_id])
-    )
-
-    const items = connections.map((c) => ({
-      id: c.id,
-      createdAt: c.created_at,
-      userA: summaries[c.user_a_id] ?? null,
-      userB: summaries[c.user_b_id] ?? null,
-    }))
-
-    res.json({
-      success: true,
-      data: {
-        items,
-        page,
-        limit: PAGE_LIMIT,
-        total: count ?? 0,
-        totalPages: Math.max(1, Math.ceil((count ?? 0) / PAGE_LIMIT)),
-      },
-    })
-  } catch (err) {
-    next(err)
-  }
 }

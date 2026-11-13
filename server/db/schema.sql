@@ -4,7 +4,7 @@
 --
 -- DESIGN NOTE: horoscope and family details are kept as
 -- SEPARATE 1:1 tables instead of JSON columns, because:
---   1) the browse/list queries in Stage 4 can SELECT only the columns
+--   1) assigned-match queries can SELECT only the columns
 --      they need from `profiles` without dragging big JSON blobs,
 --   2) columns are typed and can carry CHECK constraints / validation,
 --   3) the admin can edit a single group without touching the whole row.
@@ -88,9 +88,9 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   willing_to_relocate boolean    DEFAULT false,
   relocation_location text,
 
-  -- PRIVATE contact details — only admin / approved connections may EVER
+  -- PRIVATE contact details — only admin / the assigned match may EVER
   -- read these through the API. They are deliberately in the profiles
-  -- table (1:1) so a browse query never selects them.
+  -- table (1:1) so assigned-match listing queries never select them.
   contact_mobile     text,
   contact_whatsapp   text,
   contact_email      text,
@@ -223,44 +223,6 @@ CREATE TRIGGER trg_enforce_max_photos
   FOR EACH ROW EXECUTE FUNCTION public.enforce_max_photos();
 
 -- ------------------------------------------------------------
--- interest_requests: a user asks to connect with another user
--- ------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS public.interest_requests (
-  id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
-  sender_id   uuid        NOT NULL REFERENCES public.users (id) ON DELETE CASCADE,
-  receiver_id uuid        NOT NULL REFERENCES public.users (id) ON DELETE CASCADE,
-  status      text        NOT NULL DEFAULT 'pending'
-              CHECK (status IN ('pending', 'approved', 'rejected')),
-  created_at  timestamptz NOT NULL DEFAULT now(),
-
-  CONSTRAINT interest_no_self CHECK (sender_id <> receiver_id),
-  -- one request per pair — a rejected request can never be re-sent
-  CONSTRAINT interest_unique_pair UNIQUE (sender_id, receiver_id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_requests_sender   ON public.interest_requests (sender_id, status);
-CREATE INDEX IF NOT EXISTS idx_requests_receiver ON public.interest_requests (receiver_id, status);
-
--- ------------------------------------------------------------
--- connections: two users approved by the admin after a request
--- (user_a_id / user_b_id are stored in sorted order so the pair
---  is always unique no matter who sent the request)
--- ------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS public.connections (
-  id         uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_a_id  uuid        NOT NULL REFERENCES public.users (id) ON DELETE CASCADE,
-  user_b_id  uuid        NOT NULL REFERENCES public.users (id) ON DELETE CASCADE,
-  created_at timestamptz NOT NULL DEFAULT now(),
-
-  CONSTRAINT connection_no_self      CHECK (user_a_id <> user_b_id),
-  CONSTRAINT connection_sorted_pair  CHECK (user_a_id < user_b_id),
-  CONSTRAINT connection_unique_pair  UNIQUE (user_a_id, user_b_id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_connections_a ON public.connections (user_a_id);
-CREATE INDEX IF NOT EXISTS idx_connections_b ON public.connections (user_b_id);
-
--- ------------------------------------------------------------
 -- notifications: in-website only
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.notifications (
@@ -273,6 +235,122 @@ CREATE TABLE IF NOT EXISTS public.notifications (
 );
 
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON public.notifications (user_id, is_read);
+
+-- ------------------------------------------------------------
+-- profile_assignments: one exclusive admin-assigned bride/groom pair
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.profile_assignments (
+  id             uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  bride_user_id  uuid        NOT NULL UNIQUE REFERENCES public.users (id) ON DELETE CASCADE,
+  groom_user_id  uuid        NOT NULL UNIQUE REFERENCES public.users (id) ON DELETE CASCADE,
+  assigned_by    uuid        REFERENCES public.users (id) ON DELETE SET NULL,
+  created_at     timestamptz NOT NULL DEFAULT now(),
+
+  CONSTRAINT profile_assignment_no_self CHECK (bride_user_id <> groom_user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_profile_assignments_bride
+  ON public.profile_assignments (bride_user_id);
+CREATE INDEX IF NOT EXISTS idx_profile_assignments_groom
+  ON public.profile_assignments (groom_user_id);
+
+CREATE OR REPLACE FUNCTION public.assign_profile_pair(
+  p_bride_user_id uuid,
+  p_groom_user_id uuid,
+  p_assigned_by uuid
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_bride_gender text;
+  v_groom_gender text;
+  v_bride_status text;
+  v_groom_status text;
+  v_bride_payment_required boolean;
+  v_groom_payment_required boolean;
+  v_bride_role text;
+  v_groom_role text;
+  v_bride_active boolean;
+  v_groom_active boolean;
+  v_assigner_role text;
+  v_user_id uuid;
+BEGIN
+  IF p_bride_user_id IS NULL OR p_groom_user_id IS NULL
+     OR p_bride_user_id = p_groom_user_id THEN
+    RAISE EXCEPTION 'Choose two different profiles.';
+  END IF;
+
+  SELECT p.gender, p.profile_status, p.payment_required, u.role, u.is_active
+  INTO v_bride_gender, v_bride_status, v_bride_payment_required, v_bride_role, v_bride_active
+  FROM public.profiles p
+  JOIN public.users u ON u.id = p.user_id
+  WHERE p.user_id = p_bride_user_id;
+
+  SELECT p.gender, p.profile_status, p.payment_required, u.role, u.is_active
+  INTO v_groom_gender, v_groom_status, v_groom_payment_required, v_groom_role, v_groom_active
+  FROM public.profiles p
+  JOIN public.users u ON u.id = p.user_id
+  WHERE p.user_id = p_groom_user_id;
+
+  IF v_bride_gender IS DISTINCT FROM 'female'
+     OR v_groom_gender IS DISTINCT FROM 'male' THEN
+    RAISE EXCEPTION 'Choose one bride profile and one groom profile.';
+  END IF;
+
+  IF v_bride_status IS DISTINCT FROM 'approved'
+     OR v_groom_status IS DISTINCT FROM 'approved'
+     OR v_bride_payment_required IS DISTINCT FROM false
+     OR v_groom_payment_required IS DISTINCT FROM false
+     OR v_bride_role IS DISTINCT FROM 'user'
+     OR v_groom_role IS DISTINCT FROM 'user'
+     OR v_bride_active IS DISTINCT FROM true
+     OR v_groom_active IS DISTINCT FROM true
+     OR NOT EXISTS (
+       SELECT 1 FROM public.membership_payments
+       WHERE user_id = p_bride_user_id AND status = 'verified'
+     )
+     OR NOT EXISTS (
+       SELECT 1 FROM public.membership_payments
+       WHERE user_id = p_groom_user_id AND status = 'verified'
+     ) THEN
+    RAISE EXCEPTION 'Both profiles must be approved profiles with verified payments and active user accounts.';
+  END IF;
+
+  SELECT role INTO v_assigner_role
+  FROM public.users
+  WHERE id = p_assigned_by;
+
+  IF v_assigner_role IS DISTINCT FROM 'admin' THEN
+    RAISE EXCEPTION 'Only an admin can assign profiles.';
+  END IF;
+
+  FOR v_user_id IN
+    SELECT locked_user_id
+    FROM unnest(ARRAY[p_bride_user_id, p_groom_user_id]) AS ids(locked_user_id)
+    ORDER BY locked_user_id
+  LOOP
+    PERFORM pg_advisory_xact_lock(hashtext(v_user_id::text));
+  END LOOP;
+
+  DELETE FROM public.profile_assignments
+  WHERE bride_user_id IN (p_bride_user_id, p_groom_user_id)
+     OR groom_user_id IN (p_bride_user_id, p_groom_user_id);
+
+  INSERT INTO public.profile_assignments (bride_user_id, groom_user_id, assigned_by)
+  VALUES (p_bride_user_id, p_groom_user_id, p_assigned_by);
+
+  INSERT INTO public.notifications (user_id, title, message)
+  VALUES
+    (p_bride_user_id, 'Your match was assigned', 'The admin assigned a match to your profile. Open Assigned matches to view the profile and contact details.'),
+    (p_groom_user_id, 'Your match was assigned', 'The admin assigned a match to your profile. Open Assigned matches to view the profile and contact details.');
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.assign_profile_pair(uuid, uuid, uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.assign_profile_pair(uuid, uuid, uuid) TO service_role;
 
 -- ------------------------------------------------------------
 -- Stage 5: contact_messages — messages from the public

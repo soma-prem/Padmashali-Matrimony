@@ -3,41 +3,8 @@ import { AppError } from '../utils/AppError.js'
 import { loadProfileSnapshot } from '../utils/profileSnapshot.js'
 import {
   requireApprovedProfile,
-  getRelationshipMap,
-  getRelationship,
-  checkConnected,
-  stripContact,
-  assertBrowseTarget,
-} from '../utils/relations.js'
-
-const PAGE_LIMIT = 12
-const GENDER_IDS = ['male', 'female']
-
-// date-of-birth bounds for min/max age filters (simple, ±1 day precision)
-function dobBounds(minAge, maxAge) {
-  const now = new Date()
-  const bound = (years) => {
-    const d = new Date(now.getFullYear() - years, now.getMonth(), now.getDate())
-    return d.toISOString().split('T')[0]
-  }
-  return {
-    bornBefore: minAge !== null ? bound(minAge) : null, // at least minAge years old
-    bornAfter: maxAge !== null ? bound(maxAge + 1) : null, // at most maxAge years old
-  }
-}
-
-function numberOr(value, min, max) {
-  if (value === undefined || value === null || value === '') return null
-  const n = Number(value)
-  if (Number.isNaN(n) || n < min || n > max) return null
-  return n
-}
-
-function textOr(value, max = 80) {
-  const t = String(value || '').trim()
-  if (!t) return null
-  return t.slice(0, max).replace(/[%(,)]/g, '')
-}
+  assertAssignedMatchTarget,
+} from '../utils/profileAccess.js'
 
 function ageFrom(dob) {
   if (!dob) return null
@@ -46,131 +13,101 @@ function ageFrom(dob) {
 }
 
 // ---------------------------------------------------------------------------
-// GET /api/browse — approved, OPPOSITE gender, contact details NEVER included
+// GET /api/browse — only the member's admin-assigned match
 // ---------------------------------------------------------------------------
 export async function listBrowse(req, res, next) {
   try {
     const viewer = await requireApprovedProfile(req.user.id)
     const oppositeGender = viewer.gender === 'male' ? 'female' : 'male'
 
-    const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1)
-    const minAge = numberOr(req.query.minAge, 18, 100)
-    const maxAge = numberOr(req.query.maxAge, 18, 100)
-    const maritalStatus = textOr(req.query.maritalStatus, 30)
-    const education = textOr(req.query.education, 120)
-    const city = textOr(req.query.city, 80)
-    const state = textOr(req.query.state, 80)
-    const nakshatra = textOr(req.query.nakshatra, 40)
-    const gotra = textOr(req.query.gotra, 60)
+    const { data: assignment, error: assignmentError } = await supabase
+      .from('profile_assignments')
+      .select('bride_user_id, groom_user_id')
+      .or(`bride_user_id.eq.${req.user.id},groom_user_id.eq.${req.user.id}`)
+      .maybeSingle()
+    if (assignmentError) throw assignmentError
 
-    const { bornBefore, bornAfter } = dobBounds(minAge, maxAge)
-
-    const [activeUsersRes, verifiedPaymentsRes] = await Promise.all([
-      supabase.from('users').select('id').eq('is_active', true),
-      supabase.from('membership_payments').select('user_id').eq('status', 'verified'),
-    ])
-    if (activeUsersRes.error) throw activeUsersRes.error
-    if (verifiedPaymentsRes.error) throw verifiedPaymentsRes.error
-
-    const verifiedUserIds = new Set((verifiedPaymentsRes.data || []).map((payment) => payment.user_id))
-    const eligibleUserIds = (activeUsersRes.data || [])
-      .map((user) => user.id)
-      .filter((userId) => verifiedUserIds.has(userId))
-    if (eligibleUserIds.length === 0) {
+    if (!assignment) {
       return res.json({
         success: true,
-        data: { items: [], page, limit: PAGE_LIMIT, total: 0, totalPages: 1 },
+        data: { items: [], assignedMatch: null, hasAssignment: false, total: 0 },
       })
     }
 
-    // Nakshatra lives in horoscope_details; Gotra is a profiles column.
-    let allowedIds = null // null = no constraint
-    if (nakshatra) {
-      let q = supabase.from('horoscope_details').select('user_id')
-      q = q.eq('nakshatra', nakshatra)
-      const { data, error } = await q
-      if (error) throw error
-      allowedIds = data.map((r) => r.user_id)
-      if (allowedIds.length === 0) {
-        return res.json({
-          success: true,
-          data: { items: [], page, limit: PAGE_LIMIT, total: 0, totalPages: 1 },
-        })
-      }
-    }
-
-    const buildQuery = (countOnly = false) => {
-      let query = supabase
+    const assignedPartnerId = assignment.bride_user_id === req.user.id
+      ? assignment.groom_user_id
+      : assignment.bride_user_id
+    const [activeUserRes, verifiedPaymentRes, profileRes] = await Promise.all([
+      supabase
+        .from('users')
+        .select('id')
+        .eq('id', assignedPartnerId)
+        .eq('role', 'user')
+        .eq('is_active', true)
+        .maybeSingle(),
+      supabase
+        .from('membership_payments')
+        .select('user_id')
+        .eq('user_id', assignedPartnerId)
+        .eq('status', 'verified')
+        .maybeSingle(),
+      supabase
         .from('profiles')
-        .select(countOnly ? 'id' : 'id, user_id, name, gender, date_of_birth, height_cm, city, state, highest_qualification, occupation, marital_status, gotra, created_at',
-          countOnly ? { count: 'exact', head: true } : undefined)
+        .select('id, user_id, name, gender, date_of_birth, height_cm, city, state, highest_qualification, occupation, marital_status, gotra')
+        .eq('user_id', assignedPartnerId)
         .eq('profile_status', 'approved')
         .eq('payment_required', false)
         .eq('gender', oppositeGender)
-        .neq('user_id', req.user.id)
-        .in('user_id', eligibleUserIds)
-      if (allowedIds) query = query.in('user_id', allowedIds)
-      if (gotra) query = query.ilike('gotra', `%${gotra}%`)
-      if (maritalStatus) query = query.eq('marital_status', maritalStatus)
-      if (education) query = query.ilike('highest_qualification', `%${education}%`)
-      if (city) query = query.ilike('city', `%${city}%`)
-      if (state) query = query.ilike('state', `%${state}%`)
-      if (bornBefore) query = query.lte('date_of_birth', bornBefore)
-      if (bornAfter) query = query.gte('date_of_birth', bornAfter)
-      return query.order('created_at', { ascending: false })
+        .maybeSingle(),
+    ])
+    if (activeUserRes.error) throw activeUserRes.error
+    if (verifiedPaymentRes.error) throw verifiedPaymentRes.error
+    if (profileRes.error) throw profileRes.error
+
+    const profile = profileRes.data
+    if (!activeUserRes.data || !verifiedPaymentRes.data || !profile) {
+      return res.json({
+        success: true,
+        data: { items: [], assignedMatch: null, hasAssignment: true, total: 0 },
+      })
     }
 
-    const { data: rows, error } = await buildQuery()
-      .range((page - 1) * PAGE_LIMIT, page * PAGE_LIMIT - 1)
-    if (error) throw error
-
-    const { count: total, error: countError } = await buildQuery(true)
-    if (countError) throw countError
-
-    const userIds = rows.map((r) => r.user_id)
-
-    const [horoRes, photoRes, relMap] = await Promise.all([
-      userIds.length
-        ? supabase.from('horoscope_details').select('user_id, nakshatra').in('user_id', userIds)
-        : Promise.resolve({ data: [], error: null }),
-      userIds.length
-        ? supabase.from('profile_photos').select('user_id, url').in('user_id', userIds).eq('is_main', true)
-        : Promise.resolve({ data: [], error: null }),
-      getRelationshipMap(req.user.id, userIds),
+    const [horoRes, photoRes] = await Promise.all([
+      supabase
+        .from('horoscope_details')
+        .select('user_id, nakshatra')
+        .eq('user_id', assignedPartnerId)
+        .maybeSingle(),
+      supabase
+        .from('profile_photos')
+        .select('user_id, url')
+        .eq('user_id', assignedPartnerId)
+        .eq('is_main', true)
+        .maybeSingle(),
     ])
     if (horoRes.error) throw horoRes.error
     if (photoRes.error) throw photoRes.error
 
-    const horoByUser = Object.fromEntries((horoRes.data || []).map((h) => [h.user_id, h]))
-    const photoByUser = Object.fromEntries((photoRes.data || []).map((p) => [p.user_id, p.url]))
-
-    const items = rows.map((r) => ({
-      profileId: r.id,
-      userId: r.user_id,
-      name: r.name,
-      gender: r.gender,
-      age: ageFrom(r.date_of_birth),
-      heightCm: r.height_cm,
-      city: r.city,
-      state: r.state,
-      education: r.highest_qualification,
-      occupation: r.occupation,
-      maritalStatus: r.marital_status,
-      nakshatra: horoByUser[r.user_id]?.nakshatra ?? null,
-      gotra: r.gotra ?? null,
-      profilePhotoUrl: photoByUser[r.user_id] ?? null,
-      relationship: relMap[r.user_id] ?? 'none',
-    }))
+    const assignedMatch = {
+      profileId: profile.id,
+      userId: profile.user_id,
+      name: profile.name,
+      gender: profile.gender,
+      age: ageFrom(profile.date_of_birth),
+      heightCm: profile.height_cm,
+      city: profile.city,
+      state: profile.state,
+      education: profile.highest_qualification,
+      occupation: profile.occupation,
+      maritalStatus: profile.marital_status,
+      nakshatra: horoRes.data?.nakshatra ?? null,
+      gotra: profile.gotra ?? null,
+      profilePhotoUrl: photoRes.data?.url ?? null,
+    }
 
     res.json({
       success: true,
-      data: {
-        items,
-        page,
-        limit: PAGE_LIMIT,
-        total: total ?? 0,
-        totalPages: Math.max(1, Math.ceil((total ?? 0) / PAGE_LIMIT)),
-      },
+      data: { items: [assignedMatch], assignedMatch, hasAssignment: true, total: 1 },
     })
   } catch (err) {
     next(err)
@@ -178,9 +115,8 @@ export async function listBrowse(req, res, next) {
 }
 
 // ---------------------------------------------------------------------------
-// GET /api/browse/:profileId — full profile WITHOUT contact details,
-// WITH contact details only when the viewer is connected to this user.
-// Enforced here on the server, never only in the UI.
+// GET /api/browse/:profileId — the assigned partner's full profile and contact details.
+// The assignment is verified on the server before any contact data is returned.
 // ---------------------------------------------------------------------------
 export async function getBrowseDetail(req, res, next) {
   try {
@@ -196,9 +132,17 @@ export async function getBrowseDetail(req, res, next) {
       .eq('id', profileId)
       .maybeSingle()
     if (findError) throw findError
-    assertBrowseTarget(targetProfile, viewer)
+    assertAssignedMatchTarget(targetProfile, viewer)
 
-    const [paymentRes, userRes] = await Promise.all([
+    const [assignmentRes, paymentRes, userRes] = await Promise.all([
+      supabase
+        .from('profile_assignments')
+        .select('id')
+        .or(
+          `and(bride_user_id.eq.${req.user.id},groom_user_id.eq.${targetProfile.user_id}),` +
+          `and(groom_user_id.eq.${req.user.id},bride_user_id.eq.${targetProfile.user_id})`
+        )
+        .maybeSingle(),
       supabase
         .from('membership_payments')
         .select('id')
@@ -209,26 +153,23 @@ export async function getBrowseDetail(req, res, next) {
         .from('users')
         .select('id')
         .eq('id', targetProfile.user_id)
+        .eq('role', 'user')
         .eq('is_active', true)
         .maybeSingle(),
     ])
+    if (assignmentRes.error) throw assignmentRes.error
     if (paymentRes.error) throw paymentRes.error
     if (userRes.error) throw userRes.error
+    if (!assignmentRes.data) {
+      throw new AppError('This profile is not available.', 404)
+    }
     if (!paymentRes.data || !userRes.data) {
       throw new AppError('This profile is not available.', 404)
     }
 
     const snapshot = await loadProfileSnapshot(targetProfile.user_id, { createIfMissing: false })
 
-    const connected = await checkConnected(req.user.id, targetProfile.user_id)
-    const relationship = await getRelationship(req.user.id, targetProfile.user_id)
-
-    const data = stripContact(snapshot) // never leak by accident
-    if (connected) {
-      data.contact = snapshot.contact // only connected users get this
-    }
-    data.relationship = relationship
-    data.connected = connected
+    const data = { ...snapshot, assigned: true }
 
     res.json({ success: true, data: { profile: data } })
   } catch (err) {

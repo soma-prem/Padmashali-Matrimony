@@ -19,7 +19,7 @@ const STATUS_UI = {
   approved: {
     chip: 'status-chip status-chip--approved',
     label: 'Approved',
-    message: '✅ Your profile is approved! Browse other profiles and send interest requests.',
+    message: '✅ Your profile is approved. Once your payment is verified, an admin can assign you a match.',
   },
   rejected: {
     chip: 'status-chip status-chip--rejected',
@@ -83,7 +83,7 @@ export default function UserDashboard() {
             </div>
             <p className="dash-status-message">
               {status === 'approved' && profile.paymentRequired
-                ? '✅ Your profile is approved. Browsing will unlock after the admin sends a payment request and verifies your payment.'
+                ? '✅ Your profile is approved. The admin will send a payment request; a match can be assigned after your payment is verified.'
                 : ui.message}
             </p>
             {status === 'rejected' && profile.rejectionReason && (
@@ -93,28 +93,22 @@ export default function UserDashboard() {
               <div style={{ marginTop: 12 }}>
                 <Link to="/payment" className="btn btn-primary dash-action-btn">Payment details</Link>
                 <p style={{ marginTop: 8, fontSize: 13, color: 'var(--text)' }}>
-                  🔒 Your payment must be verified before browsing profiles.
+                  🔒 Your payment must be verified before an admin can assign your match.
                 </p>
               </div>
             ) : status === 'approved' ? (
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>
                 <Link to="/browse" className="btn btn-primary dash-action-btn">
-                  Browse Profiles
-                </Link>
-                <Link to="/requests" className="btn btn-outline dash-action-btn">
-                  My Requests
-                </Link>
-                <Link to="/connections" className="btn btn-outline dash-action-btn">
-                  My Connections
+                  Assigned matches
                 </Link>
               </div>
             ) : (
               <div>
                 <span className="btn btn-primary dash-action-btn" style={{ opacity: 0.5, cursor: 'not-allowed', pointerEvents: 'none' }}>
-                  Browse Profiles
+                  Assigned matches
                 </span>
                 <p style={{ marginTop: 8, fontSize: 13, color: 'var(--text)' }}>
-                  🔒 Your profile must be approved first.
+                  🔒 Your profile must be approved and payment verified before an admin can assign your match.
                 </p>
               </div>
             )}

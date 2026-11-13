@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
-import { api, toast } from '../api/api.js'
+import { Link, useParams } from 'react-router-dom'
+import { api } from '../api/api.js'
 import { formatSiblingDetails } from '../utils/family.js'
 
 function Row({ k, v }) {
@@ -26,13 +26,10 @@ function Group({ title, rows, children, profileId }) {
 
 export default function BrowseDetail() {
   const { profileId } = useParams()
-  const navigate = useNavigate()
-
   const [activeCategory, setActiveCategory] = useState('basic')
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [sending, setSending] = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -49,32 +46,18 @@ export default function BrowseDetail() {
 
   useEffect(() => { load() }, [profileId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const sendInterest = async () => {
-    setSending(true)
-    try {
-      const data = await api('/requests', { method: 'POST', body: { receiverProfileId: profileId } })
-      toast.success(data.message || 'Interest request sent.')
-      await load() // refresh relationship status
-    } catch (err) {
-      toast.error(err.message)
-    } finally {
-      setSending(false)
-    }
-  }
-
   if (loading) return <div className="page-loading">Loading profile…</div>
   if (error) {
     return (
       <div className="dashboard-page">
         <div className="dashboard-card">
           <p className="form-error">{error}</p>
-          <Link to="/browse" className="btn btn-outline">← Back to browse</Link>
+          <Link to="/browse" className="btn btn-outline">← Back to assigned matches</Link>
         </div>
       </div>
     )
   }
 
-  const rel = profile.relationship
   const photos = profile.photos || []
   const mainPhotoUrl = photos[0]?.url
   const galleryPhotos = photos.filter((photo, index, all) =>
@@ -88,7 +71,7 @@ export default function BrowseDetail() {
   const family = profile.family ?? {}
   const horo = profile.horoscope ?? {}
   const lifestyle = profile.lifestyleLocation ?? {}
-  const contact = profile.contact // only present when connected
+  const contact = profile.contact ?? {}
 
   const age = basic.dateOfBirth
     ? Math.max(0, Math.floor((Date.now() - new Date(basic.dateOfBirth).getTime()) / (365.25 * 24 * 3600 * 1000)))
@@ -98,7 +81,7 @@ export default function BrowseDetail() {
     <div className="dashboard-page">
       <div className="dashboard-card wide">
         <div style={{ marginBottom: 12 }}>
-          <Link to="/browse" className="btn btn-outline btn-sm">← Back to browse</Link>
+          <Link to="/browse" className="btn btn-outline btn-sm">← Back to assigned matches</Link>
         </div>
 
         {/* hero */}
@@ -136,54 +119,19 @@ export default function BrowseDetail() {
           </section>
         )}
 
-        {/* interest status */}
-        {rel === 'request_pending' ? (
-          <div className="detail-request-stage" role="status">
-            <span aria-hidden="true">⏳</span>
-            <span>Request pending — admin review in progress</span>
-          </div>
-        ) : rel !== 'connected' && (
-          <div className="detail-locked-note">
-            🔒 Contact details unlock after admin approval of an interest request.
-          </div>
-        )}
-
-        {rel === 'connected' && (
-          <div className="detail-connect-box">
-            ✅ You are connected with {basic.name}. The contact details are below —
-            or open <strong>My Connections</strong> anytime.
-          </div>
-        )}
-
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', margin: '6px 0 16px' }}>
-          {rel === 'none' && (
-            <button type="button" className="btn btn-primary" disabled={sending} onClick={sendInterest}>
-              {sending ? 'Sending…' : 'Send Interest'}
-            </button>
-          )}
-          {rel === 'connected' && (
-            <button type="button" className="btn btn-primary" onClick={() => navigate('/connections')}>
-              Open My Connections
-            </button>
-          )}
-          {rel === 'request_rejected' && (
-            <button type="button" className="btn btn-outline" disabled title="An earlier request was rejected">
-              Request rejected — not possible
-            </button>
-          )}
+        <div className="detail-assigned-note">
+          ✅ This match was assigned by the admin. Contact details are available below.
         </div>
 
-        {contact && (
-          <div className="admin-contact-box">
-            <h4>Contact details (visible because you are connected)</h4>
+        <div className="admin-contact-box">
+            <h4>Assigned match contact details</h4>
             <div className="review-list">
               <Row k="Mobile" v={contact.mobile} />
               <Row k="WhatsApp" v={contact.whatsapp} />
               <Row k="Email" v={contact.email} />
               <Row k="Address" v={contact.address} />
             </div>
-          </div>
-        )}
+        </div>
 
         <div className="browse-detail-categories">
           <div className="browse-detail-tabs" role="tablist" aria-label="Profile information categories">

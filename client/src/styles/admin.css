@@ -388,6 +388,74 @@
   margin-top: 22px;
 }
 
+.admin-assignment-dialog {
+  width: min(100%, 700px);
+  max-height: min(90vh, 760px);
+  overflow: auto;
+}
+
+.admin-assignment-search {
+  display: grid;
+  gap: 7px;
+  margin-top: 18px;
+  color: var(--text-h);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.admin-assignment-candidates {
+  display: grid;
+  gap: 8px;
+  max-height: 340px;
+  overflow-y: auto;
+  margin-top: 12px;
+}
+
+.admin-assignment-candidate {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  gap: 12px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-h);
+  background: var(--card);
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-assignment-candidate:hover,
+.admin-assignment-candidate.is-selected {
+  border-color: var(--primary);
+  background: var(--accent-soft);
+}
+
+.admin-assignment-candidate-main {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+}
+
+.admin-assignment-candidate-main > span {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-assignment-candidate-status {
+  flex: 0 0 auto;
+}
+
+.assignment-notice {
+  margin-top: 12px !important;
+  color: var(--success) !important;
+}
+
 .admin-page {
   max-width: 1040px;
   margin: 0 auto;
@@ -463,9 +531,6 @@
   color: var(--text);
   margin-top: 4px;
 }
-
-.stat-card.is-zero .num { color: var(--text); opacity: 0.45; }
-.stat-card .stage-hint { font-size: 11px; color: var(--text); opacity: 0.7; margin-top: 4px; }
 
 /* filters */
 .admin-filters {
@@ -743,15 +808,6 @@
   border: 1px solid var(--border);
 }
 
-/* placeholder page (requests / connections) */
-.admin-placeholder-big {
-  background: var(--card);
-  border: 1px dashed var(--accent);
-  border-radius: var(--radius);
-  padding: 44px 20px;
-  text-align: center;
-}
-
 @media (max-width: 640px) {
   .admin-page {
     width: 100%;
@@ -802,12 +858,7 @@
   }
 
   .admin-contact-box,
-  .reject-box,
-  .pane {
+  .reject-box {
     padding: 12px;
-  }
-
-  .admin-placeholder-big {
-    padding: 32px 16px;
   }
 }

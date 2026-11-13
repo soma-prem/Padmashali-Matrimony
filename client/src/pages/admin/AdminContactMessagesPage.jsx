@@ -112,8 +112,8 @@ export default function AdminContactMessagesPage() {
 
       <div className="admin-list">
         {(items || []).map((m) => (
-          <div className="request-row" key={m.id} style={{ alignItems: 'flex-start' }}>
-            <div className="request-row-main">
+          <div className="contact-message-row" key={m.id}>
+            <div className="contact-message-row-main">
               <div className="admin-item-name">
                 {m.name}
                 {!m.is_handled && <span className="inactive-tag" style={{ marginLeft: 8 }}>New</span>}
@@ -168,7 +168,7 @@ export default function AdminContactMessagesPage() {
                 </form>
               )}
             </div>
-            <div className="request-row-actions">
+            <div className="contact-message-row-actions">
               <button type="button" className={`btn btn-sm ${m.is_handled ? 'btn-outline' : 'btn-primary'}`}
                 disabled={busyId === m.id}
                 onClick={() => toggleHandled(m)}>

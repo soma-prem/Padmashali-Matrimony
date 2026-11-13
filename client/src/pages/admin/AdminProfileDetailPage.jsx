@@ -194,7 +194,7 @@ export default function AdminProfileDetailPage() {
 
         {/* contact details */}
         <div className="admin-contact-box">
-          <h4>Contact details (private — admin & approved connects only)</h4>
+          <h4>Contact details (private — admin and assigned match only)</h4>
           <div className="review-list">
             <Row k="Mobile" v={profile.contact?.mobile} />
             <Row k="WhatsApp" v={profile.contact?.whatsapp} />
@@ -280,7 +280,7 @@ export default function AdminProfileDetailPage() {
           <button type="button" className="btn btn-primary" disabled={!canApprove || busy}
             onClick={() => setConfirmation({
               title: 'Approve profile?',
-              message: 'The user will be notified that their profile is approved. Browsing will remain locked until their payment is verified.',
+              message: 'The user will be notified that their profile is approved. They become eligible for an admin-assigned match after payment is verified.',
               confirmLabel: 'Approve',
               action: doApprove,
             })}>
@@ -296,7 +296,7 @@ export default function AdminProfileDetailPage() {
           <form className="reject-box" onSubmit={sendPaymentRequest}>
             <h3 style={{ margin: '0 0 8px' }}>Send membership payment request</h3>
             <p style={{ margin: '0 0 10px', fontSize: 13 }}>
-              The member cannot browse profiles until their payment is verified.
+              The member is not eligible for an admin-assigned match until payment is verified.
             </p>
             <label className="form-label" htmlFor="membership-amount">Amount (INR)</label>
             <input id="membership-amount" className="form-input" type="number" min="1" step="0.01"
@@ -311,9 +311,9 @@ export default function AdminProfileDetailPage() {
         )}
         {profile.status === 'approved' && profile.paymentRequired && payment?.status === 'verified' && (
           <div className="reject-box">
-            <p style={{ margin: '0 0 10px' }}>Payment is verified; retry unlocking browsing if the previous update failed.</p>
+            <p style={{ margin: '0 0 10px' }}>Payment is verified; retry activating assignment eligibility if the previous update failed.</p>
             <button type="button" className="btn btn-primary" disabled={paymentBusy} onClick={retryPaymentUnlock}>
-              {paymentBusy ? 'Please wait…' : 'Unlock browsing'}
+              {paymentBusy ? 'Please wait…' : 'Retry payment activation'}
             </button>
           </div>
         )}

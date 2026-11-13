@@ -6,7 +6,7 @@ const STEPS = [
     no: '01',
     title: 'Create your profile',
     text: 'Register and fill in your details, community, horoscope, career, family information and photos.',
-    note: 'Your contact details stay private until a connection is approved.',
+    note: 'Your contact details are shared only with your assigned match.',
   },
   {
     no: '02',
@@ -16,22 +16,22 @@ const STEPS = [
   },
   {
     no: '03',
-    title: 'Browse matches',
-    text: 'After approval, explore approved profiles and filter by age, education, location, nakshatra or gotra.',
-    note: 'Browse profile details without exposing private contact information.',
+    title: 'Submit your payment',
+    text: 'The admin sends payment instructions after approving your profile. Submit your payment details for verification.',
+    note: 'Payment must be verified before an assignment can be made.',
   },
   {
     no: '04',
-    title: 'Connect through admin',
-    text: 'Send an interest request. Our admin reviews it and helps both families make an introduction.',
-    note: 'Contact details are shared only after the connection is approved.',
+    title: 'Review your match',
+    text: 'The admin assigns one approved, paid profile of the opposite gender for you to review.',
+    note: 'See only your assigned profile and its contact details in the Assigned matches tab.',
   },
 ]
 
 export default function HowItWorks({ embedded = false }) {
   usePageMeta(
     'How it works',
-    'Create profile → admin verification → browse matches → connect through the admin. Contact details unlock only for approved connections.',
+    'Complete your profile, get approved, submit payment for admin verification, then receive an admin-assigned match with contact details.',
     !embedded
   )
 

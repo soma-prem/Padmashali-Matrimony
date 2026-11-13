@@ -6,7 +6,7 @@ import React from 'react'
  *  1. Profile submitted
  *  2. Admin approved
  *  3. Payment completed
- *  4. Admin accepted
+ *  4. Admin verified
  */
 export function getTimelineSteps(status = 'draft', paymentStatus = null, paymentRequired = false) {
   // Step 1: Profile submitted
@@ -37,7 +37,9 @@ export function getTimelineSteps(status = 'draft', paymentStatus = null, payment
   // Step 3: Payment completed
   let step3State = 'pending'
   let step3Desc = 'Pending approval'
-  const isFullyAccepted = (status === 'approved' && !paymentRequired) || paymentStatus === 'verified'
+  const isFullyAccepted = status === 'approved' &&
+    paymentStatus === 'verified' &&
+    !paymentRequired
   if (isFullyAccepted) {
     step3State = 'completed'
     step3Desc = 'Payment completed'
@@ -55,22 +57,25 @@ export function getTimelineSteps(status = 'draft', paymentStatus = null, payment
     step3Desc = 'Awaiting payment request'
   }
 
-  // Step 4: Admin accepted
+  // Step 4: Admin verified
   let step4State = 'pending'
-  let step4Desc = 'Awaiting payment'
+  let step4Desc = 'Awaiting payment submission'
   if (isFullyAccepted) {
     step4State = 'completed'
-    step4Desc = 'Admin accepted & browsing active'
+    step4Desc = 'Payment verified by admin'
   } else if (paymentStatus === 'submitted') {
     step4State = 'in_progress'
     step4Desc = 'Awaiting admin verification'
+  } else if (paymentStatus === 'rejected') {
+    step4State = 'rejected'
+    step4Desc = 'Payment rejected by admin'
   }
 
   return [
     { id: 1, key: 'submitted', title: 'Profile submitted', state: step1State, desc: step1Desc },
     { id: 2, key: 'approved', title: 'Admin approved', state: step2State, desc: step2Desc },
     { id: 3, key: 'payment', title: 'Payment completed', state: step3State, desc: step3Desc },
-    { id: 4, key: 'accepted', title: 'Admin accepted', state: step4State, desc: step4Desc },
+    { id: 4, key: 'verified', title: 'Admin verified', state: step4State, desc: step4Desc },
   ]
 }
 

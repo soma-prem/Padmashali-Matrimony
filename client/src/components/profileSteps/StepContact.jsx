@@ -4,9 +4,8 @@ export default function StepContact({ value = {}, onChange, disabled }) {
   return (
     <div>
       <div className="section-note">
-        🔒 <strong>Only visible to admin and your approved matches.</strong> Nobody browsing the
-        website can see these details — they are shared only after an interest request is
-        approved by the admin.
+        🔒 <strong>Only visible to admins and your assigned match.</strong> These details are
+        shared after the admin assigns a match to both users.
       </div>
 
       <div className="form-grid">

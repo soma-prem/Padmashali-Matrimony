@@ -14,7 +14,7 @@ export default function NotFound() {
         </p>
         <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
           <Link to="/" className="btn btn-primary">Back to Home</Link>
-          <Link to="/browse" className="btn btn-outline">Browse Profiles</Link>
+          <Link to="/browse" className="btn btn-outline">Assigned matches</Link>
         </div>
       </div>
     </div>

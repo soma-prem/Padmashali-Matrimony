@@ -16,12 +16,7 @@
   text-align: center;
 }
 
-.requests-page-card {
-  max-width: 1100px;
-}
-
 .payment-page .dashboard-card,
-.requests-page-card,
 .dashboard-card.wide {
   max-width: 1100px;
 }
@@ -61,14 +56,6 @@
 
 .admin-card {
   max-width: 640px;
-}
-
-.admin-placeholder {
-  padding: 26px 18px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  font-size: 15px;
 }
 
 /* ===== Stage 2: status + completion on dashboard ===== */

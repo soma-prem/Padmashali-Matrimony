@@ -19,17 +19,14 @@ const PUBLIC_ICON_PATHS = {
 
 const USER_LINKS = [
   { to: '/profile', label: 'My profile', icon: '♙' },
-  { to: '/browse', label: 'Discover matches', icon: '♡', requiresApproval: true },
-  { to: '/requests', label: 'My requests', icon: '↗', requiresApproval: true },
-  { to: '/connections', label: 'Connections', icon: '♧', requiresApproval: true },
+  { to: '/browse', label: 'Assigned matches', icon: '♡', requiresApproval: true },
   { to: '/payment', label: 'Payment details', icon: '₹', requiresApproval: true },
 ]
 
 const ADMIN_LINKS = [
   { to: '/admin', label: 'Dashboard', icon: '/logos/dashboard.png', end: true },
   { to: '/admin/profiles', label: 'Profiles', icon: '/logos/profile.jpg', countKey: 'pendingProfiles' },
-  { to: '/admin/requests', label: 'Requests', icon: '/logos/request.png', countKey: 'pendingRequests' },
-  { to: '/admin/connections', label: 'Connections', icon: '/logos/connection.jpg', countKey: 'totalConnections' },
+  { to: '/admin/assign-users', label: 'Assign users', icon: '↔' },
   { to: '/admin/messages', label: 'Contact messages', icon: '/logos/contact.png', countKey: 'openMessages' },
   { to: '/admin/payments', label: 'Payments', icon: '/logos/payment.png', countKey: 'pendingPayments' },
 ]

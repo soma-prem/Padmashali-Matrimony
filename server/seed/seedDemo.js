@@ -2,7 +2,7 @@
  * ⚠️ DEMO DATA ONLY — for TESTING, never for a live website. ⚠️
  *
  * Creates 4 approved demo users (2 grooms, 2 brides) with obviously fake
- * payment submissions so an admin can verify payments and unlock browsing.
+ * payment submissions so an admin can verify payments before assigning matches.
  * - Emails end in @demo.example (fake domain)
  * - All passwords are: Demo@1234
  * - Re-running the script REPLACES the demo users (delete + recreate)

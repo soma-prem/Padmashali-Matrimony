@@ -34,7 +34,7 @@ export default function Home() {
 
   usePageMeta(
     'Padmashali Samaj Matrimony — traditional matchmaking for the community',
-    'Create a verified profile, browse approved matches of the opposite gender and connect through our admin-assisted matchmaking.'
+    'Complete your profile, get approved and receive a manually assigned match with contact details through our admin-managed matchmaking.'
   )
 
   useEffect(() => {

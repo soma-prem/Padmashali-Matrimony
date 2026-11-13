@@ -23,7 +23,7 @@ export default function Footer() {
           <p className="footer-heading">Get started</p>
           <Link to="/register">Register free</Link>
           <Link to="/login">Login</Link>
-          <Link to="/browse">Browse profiles</Link>
+          <Link to="/browse">Assigned matches</Link>
         </nav>
       </div>
 

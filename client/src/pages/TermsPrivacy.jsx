@@ -3,7 +3,7 @@ import { usePageMeta } from '../utils/usePageMeta.js'
 export default function TermsPrivacy() {
   usePageMeta(
     'Terms & Privacy Policy',
-    'Terms of use and privacy policy of Padmashali Samaj Matrimony. Contact data is shared only with an approved connection.'
+    'Terms of use and privacy policy of Padmashali Samaj Matrimony. Contact data is shared only with an admin-assigned match.'
   )
 
   return (
@@ -27,14 +27,14 @@ export default function TermsPrivacy() {
         <h2>3. Privacy of contact details</h2>
         <p>
           <strong>Mobile, WhatsApp, email and address are never public.</strong> They are visible
-          only to (a) our admin team for verification and matchmaking, and (b) members who have an
-          approved connection with you. Contact details are never included in browse or profile-list responses.
+          only to (a) our admin team for verification and matchmaking, and (b) your admin-assigned
+          match. Contact details are never included in profile-list responses.
         </p>
 
         <h2>4. Profiles of the opposite gender only</h2>
         <p>
-          Members can only browse profiles of the opposite gender. Every browse is recorded
-          server-side; no third-party script accesses profiles.
+          Members cannot browse the profile directory. The admin assigns one approved, paid profile
+          of the opposite gender, and only that assigned profile is available to each member.
         </p>
 
         <h2>5. Photography &amp; uploads</h2>
@@ -44,11 +44,11 @@ export default function TermsPrivacy() {
           right to publish, and don't upload anyone else's photos without their permission.
         </p>
 
-        <h2>6. Interest requests and connections</h2>
+        <h2>6. Payments and assigned matches</h2>
         <p>
-          Interest requests are reviewed by the admin. At most, 5 pending requests may be active
-          at the same time. When the admin approves, both members become connected and can see
-          each other's contact details. Requests that are rejected cannot be sent again.
+          After profile approval, the admin sends payment instructions. The member submits payment
+          details for verification. The admin can assign a match only after both profiles are
+          approved, active and have verified payments. Each member sees only the assigned match.
         </p>
 
         <h2>7. Notifications</h2>

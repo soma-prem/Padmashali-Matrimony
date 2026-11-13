@@ -8,8 +8,6 @@ import profileRoutes from './routes/profileRoutes.js'
 import adminRoutes from './routes/adminRoutes.js'
 import notificationRoutes from './routes/notificationRoutes.js'
 import browseRoutes from './routes/browseRoutes.js'
-import requestRoutes from './routes/requestRoutes.js'
-import connectionRoutes from './routes/connectionRoutes.js'
 import contactRoutes from './routes/contactRoutes.js'
 import visitorRoutes from './routes/visitorRoutes.js'
 import paymentRoutes from './routes/paymentRoutes.js'
@@ -66,8 +64,6 @@ app.use('/api/profile', profileRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/notifications', notificationRoutes)
 app.use('/api/browse', browseRoutes)
-app.use('/api/requests', requestRoutes)
-app.use('/api/connections', connectionRoutes)
 app.use('/api/contact', contactRoutes)
 app.use('/api/visitors', visitorRoutes)
 app.use('/api/payment', paymentRoutes)

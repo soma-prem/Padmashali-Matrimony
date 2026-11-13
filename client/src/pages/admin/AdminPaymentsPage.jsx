@@ -195,7 +195,7 @@ export default function AdminPaymentsPage() {
                   <button type="button" className="btn btn-primary" disabled={busyId === item.id}
                     onClick={() => setConfirmation({
                       title: 'Verify this payment?',
-                      message: 'Confirm that the UTR and payment screenshot match. This will unlock profile browsing for the member.',
+                      message: 'Confirm that the UTR and payment screenshot match. The member will then be eligible for an admin-assigned match.',
                       confirmLabel: 'Verify payment',
                       action: () => runAction(item, 'verify'),
                     })}>

@@ -332,11 +332,11 @@ export async function verifyPayment(req, res, next) {
       await createNotification(
         payment.user_id,
         'Payment verified',
-        'Your membership payment was verified. You can now browse profiles.'
+        'Your membership payment was verified. The admin can now assign your match.'
       )
     }
 
-    res.json({ success: true, message: 'Payment verified. The member can now browse profiles.' })
+    res.json({ success: true, message: 'Payment verified. The member is eligible for an admin-assigned match.' })
   } catch (err) {
     next(err)
   }

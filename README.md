@@ -3,12 +3,13 @@
 A community matrimony website (like Shaadi.com) built mainly for the **Padmashali samaj**
 (other communities welcome), with an **admin-assisted matchmaking** process:
 
-1. User registers → fills profile → submits for approval
-2. Admin verifies (approves / rejects with a reason)
-3. Approved users browse profiles of the **opposite gender only — without contact details**
-4. User sends an **interest request** (max 5 pending at a time)
-5. Admin reviews and approves → **both members become connected**
-6. Only then do both sides see **contact details**, plus in-website notifications
+1. User registers, completes their profile and submits it for approval.
+2. Admin approves or rejects the profile with a reason.
+3. Admin sends payment instructions; the user submits payment details and the admin verifies them.
+4. Admin manually assigns an active, approved, paid bride/groom pair.
+5. Each member sees only their assigned match, including that match's contact details.
+
+Members cannot browse the profile directory, send interest requests or create connections.
 
 ## Tech stack
 
@@ -33,19 +34,18 @@ marriage-bureau/
 │       ├── api/api.js          # fetch helpers (JWT, 401 auto-logout, toasts)
 │       ├── components/         # Navbar (hamburger), Footer, NotificationBell, Toaster…
 │       ├── components/profileSteps/   # 10-step profile wizard
-│       ├── pages/              # Home, AboutSamaj, HowItWorks, ContactUs, TermsPrivacy,
-│       │                       # Register, Login, Profile, Notifications, UserDashboard,
-│       │                       # Browse, BrowseDetail, MyRequests, MyConnections, NotFound
-│       ├── pages/admin/        # AdminLayout, Dashboard, Profiles, ProfileDetail,
-│       │                       # Requests, Connections, ContactMessages
+│       ├── pages/              # Home, HowItWorks, ContactUs, TermsPrivacy, Register,
+│       │                       # Login, Profile, Notifications, UserDashboard, Assigned matches
+│       ├── pages/admin/        # AdminLayout, Dashboard, Profiles, Assignments,
+│       │                       # ProfileDetail, Payments, ContactMessages
 │       └── styles/             # one plain-CSS file per area
 └── server/                     # Express backend
     ├── server.js               # app entry — mounts all routes
     ├── config/                 # supabase + cloudinary + env
-    ├── controllers/            # auth / profile / admin / browse / requests / notifications / contact
+    ├── controllers/            # auth / profile / admin / assigned matches / notifications / contact / payment
     ├── middleware/             # authRequired/userOnly/adminOnly, multer upload, error handler
     ├── seed/                   # seedAdmin.js (creates admin), seedDemo.js (⚠ demo data)
-    └── db/                     # schema.sql + migrations_stage2.sql + migrations_stage5.sql
+    └── db/                     # schema.sql + staged migrations
 ```
 
 ---
@@ -62,10 +62,12 @@ Then open a terminal and check: `node -v` and `npm -v` both print a version.
 1. Register at <https://supabase.com> → **New project** (choose a region near you).
 2. Open **SQL Editor → New query**, paste the entire contents of
    **`server/db/schema.sql`** and press **Run**. This creates every table.
-3. Run the two small migrations the same way (each is safe to re-run; re-run
-   `migrations_stage5.sql` on existing databases to add email reply history):
+3. Run the small migrations the same way (each is safe to re-run):
    - `server/db/migrations_stage2.sql` (adds Cloudinary `public_id` columns)
    - `server/db/migrations_stage5.sql` (adds the contact messages and email reply history tables)
+   - `server/db/migrations_stage6.sql` (adds admin-assigned profile pairs)
+   - `server/db/migrations_stage7.sql` (removes request/connection tables and requires approved, verified-paid profiles for assignments)
+   **Warning:** Stage 7 permanently drops existing `interest_requests` and `connections` tables and their data. Back up the database first if you need to retain those records.
 4. Get your keys: **Project Settings → API**. You need:
    - `Project URL` → this is `SUPABASE_URL`
    - `service_role` key (in the secret box) → this is `SUPABASE_SERVICE_ROLE_KEY`
@@ -163,7 +165,7 @@ npm run seed:demo
 
 Creates 4 approved demo users (2 grooms, 2 brides) with obviously fake sample data and
 fake payment submissions awaiting admin review. Verify a demo payment in the admin panel
-to unlock that profile for browsing. Emails are all `*@demo.example`, every password is
+before assigning that profile. Emails are all `*@demo.example`, every password is
 `Demo@1234`. Re-running replaces them.
 **See the "Before going live" checklist below — delete these before launch.**
 
@@ -174,8 +176,8 @@ to unlock that profile for browsing. Emails are all `*@demo.example`, every pass
 - Passwords stored as bcrypt hashes, never returned by any API (`toPublicUser` whitelist)
 - JWT auth (7-day expiry) with `authRequired` + role guards (`adminOnly` / `userOnly`)
 - Rate limiting: 10 attempts/15 min on login+register, 5 messages/15 min on the contact form
-- Contact details (mobile/WhatsApp/email/address) are stripped server-side in **every**
-  browse/list/detail response — only the admin and members with an approved connection receive them
+- Contact details (mobile/WhatsApp/email/address) are returned only to admins and the member
+  whose match the admin assigned; other profile-list responses do not include them
 - File uploads limited to JPG/PNG/WEBP, max 5 MB, max 6 photos, ownership checks on every photo/kundli route
 - CORS restricted to `CLIENT_URL` (+ local dev ports), helmet enabled, JSON body limit 1 MB
 - Central error handler: clean `{ success: false, message }` responses, **no stack traces**; client auto-logs-out on 401 (expired token)
@@ -224,11 +226,11 @@ to unlock that profile for browsing. Emails are all `*@demo.example`, every pass
       run `DELETE FROM users WHERE email LIKE '%@demo.example';` in SQL Editor
 - [ ] Set production env values (`CLIENT_URL`, `VITE_API_URL`, `SUPABASE_*`,
       `CLOUDINARY_*`, `NODE_ENV=production`)
-- [ ] Test on a real phone (register → fill → submit → approve → browse → request → connect)
+- [ ] Test on a real phone (register → complete profile → approve → payment request → verify payment → assign match)
 - [ ] Enable **Supabase backups**: paid projects have point-in-time restore — otherwise use
       Supabase's built-in Table Editor backups or a scheduled `pg_dump`
 - [ ] Turn on Supabase project pause protection (free projects pause after inactivity!)
-- [ ] Review the admin panel: approved profiles, open requests, contact messages
+- [ ] Review the admin panel: approved profiles, assignments, payments and contact messages
 - [ ] Toast check: verify all flows on a fresh browser session
 
 Let's go! 💙

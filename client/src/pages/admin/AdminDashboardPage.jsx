@@ -28,16 +28,6 @@ export default function AdminDashboardPage() {
             <div className="num">{stats.approvedProfiles}</div>
             <div className="lbl">Approved profiles</div>
           </div>
-          <div className={`stat-card ${stats.pendingRequests === 0 ? 'is-zero' : ''}`}>
-            <div className="num">{stats.pendingRequests}</div>
-            <div className="lbl">Pending requests</div>
-            <div className="stage-hint">Starts in Stage 4</div>
-          </div>
-          <div className={`stat-card ${stats.totalConnections === 0 ? 'is-zero' : ''}`}>
-            <div className="num">{stats.totalConnections}</div>
-            <div className="lbl">Total connections</div>
-            <div className="stage-hint">Starts in Stage 4</div>
-          </div>
         </div>
       )}
     </div>

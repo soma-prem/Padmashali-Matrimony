@@ -12,8 +12,6 @@ import Profile from './pages/Profile.jsx'
 import Notifications from './pages/Notifications.jsx'
 import Browse from './pages/Browse.jsx'
 import BrowseDetail from './pages/BrowseDetail.jsx'
-import MyRequests from './pages/MyRequests.jsx'
-import MyConnections from './pages/MyConnections.jsx'
 import PaymentDetails from './pages/PaymentDetails.jsx'
 import Home from './pages/Home.jsx'
 import Register from './pages/Register.jsx'
@@ -26,9 +24,8 @@ import NotFound from './pages/NotFound.jsx'
 import AdminLayout from './pages/admin/AdminLayout.jsx'
 import AdminDashboardPage from './pages/admin/AdminDashboardPage.jsx'
 import AdminProfilesPage from './pages/admin/AdminProfilesPage.jsx'
+import AdminAssignmentsPage from './pages/admin/AdminAssignmentsPage.jsx'
 import AdminProfileDetailPage from './pages/admin/AdminProfileDetailPage.jsx'
-import AdminRequestsPage from './pages/admin/AdminRequestsPage.jsx'
-import AdminConnectionsPage from './pages/admin/AdminConnectionsPage.jsx'
 import AdminContactMessagesPage from './pages/admin/AdminContactMessagesPage.jsx'
 import AdminPaymentsPage from './pages/admin/AdminPaymentsPage.jsx'
 
@@ -112,23 +109,6 @@ export default function App() {
               />
 
               <Route
-                path="/requests"
-                element={
-                  <ProtectedRoute roles={['user']}>
-                    <MyRequests />
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/connections"
-                element={
-                  <ProtectedRoute roles={['user']}>
-                    <MyConnections />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
                 path="/payment"
                 element={
                   <ProtectedRoute roles={['user']}>
@@ -147,9 +127,8 @@ export default function App() {
               >
                 <Route index element={<AdminDashboardPage />} />
                 <Route path="profiles" element={<AdminProfilesPage />} />
+                <Route path="assign-users" element={<AdminAssignmentsPage />} />
                 <Route path="profiles/:userId" element={<AdminProfileDetailPage />} />
-                <Route path="requests" element={<AdminRequestsPage />} />
-                <Route path="connections" element={<AdminConnectionsPage />} />
                 <Route path="messages" element={<AdminContactMessagesPage />} />
                 <Route path="payments" element={<AdminPaymentsPage />} />
               </Route>
